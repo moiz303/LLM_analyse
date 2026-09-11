@@ -1,0 +1,211 @@
+{
+  "uid": "model-cmp",
+  "title": "Full vs Compressed Model",
+  "tags": ["ml", "comparison"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-90d", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "barchart",
+      "title": "Метрики: полная vs сжатая",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "never",
+        "stacking": "none",
+        "groupWidth": 0.7,
+        "barWidth": 0.8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "full"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "displayName", "value": "Полная модель"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "compressed"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "displayName", "value": "Сжатая модель"}
+            ]
+          }
+        ]
+        }
+    },
+    {
+      "id": 2,
+      "type": "barchart",
+      "title": "Δ% отклонение сжатой модели",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"delta_pct\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "never",
+        "barWidth": 0.6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "scaleDistribution": {
+              "type": "symlog",
+              "log": 10
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "orange", "value": null},
+              {"color": "blue", "value": -1},
+              {"color": "red", "value": -5}
+            ]
+          }
+        },
+        "overrides":[
+          {
+            "matcher": {"id": "byName", "options": "delta_pct"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "displayName", "value": "Разница, %"}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Per-class: где просела сжатая модель",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"per_class_metric\")\n  |> last()\n  |> pivot(rowKey: [\"class\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"class\", \"full\", \"compressed\", \"delta\"])\n  |> sort(columns: [\"delta\"], desc: false)\n  |> group()"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{"displayName": "delta", "desc": false}]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "center"},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "delta"},
+            "properties": [
+              {"id": "custom.displayMode", "value": "color-background"},
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": -0.01},
+                    {"color": "green", "value": 0}
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "barchart",
+      "title": "Per-class: full vs compressed",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"per_class_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"class\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "never",
+        "groupWidth": 0.7,
+        "barWidth": 0.8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "min": 0,
+          "max": 1,
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "full"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "displayName", "value": "Полная модель"}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "compressed"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+              {"id": "displayName", "value": "Сжатая модель"}
+            ]
+          }
+        ]
+        }
+    }
+  ]
+}
