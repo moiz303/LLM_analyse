@@ -16,10 +16,10 @@ ENV_PATH = Path(__file__).parent / ".env"
 load_dotenv(ENV_PATH)
 
 DEFAULTS = dict(
-    url    = f"http://localhost:{os.getenv('INFLUXDB_PORT', '8086')}",
-    token  = os.getenv("INFLUXDB_TOKEN", ""),
-    org    = os.getenv("INFLUXDB_ORG", "mlops"),
-    bucket = os.getenv("INFLUXDB_BUCKET", "model_comparison"),
+    url=f"http://localhost:{os.getenv('INFLUXDB_PORT', '8086')}",
+    token=os.getenv("INFLUXDB_TOKEN", ""),
+    org=os.getenv("INFLUXDB_ORG", "mlops"),
+    bucket=os.getenv("INFLUXDB_BUCKET", "model_comparison"),
 )
 
 
@@ -66,8 +66,8 @@ def ingest(json_path: str, **cfg):
             .tag("param", m["param"])
             .tag("full_model", full_name)
             .tag("compressed_model", comp_name)
-            .field("full", (full_v / full_v * 100) if full_v else 0.0)
-            .field("compressed", (comp_v / full_v * 100) if full_v else 0.0)
+            .field("full", full_v)
+            .field("compressed", comp_v)
             .field("delta", delta)
             .field("delta_pct", (delta / full_v * 100) if full_v else 0.0)
             .time(ts)

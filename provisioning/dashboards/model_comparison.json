@@ -10,14 +10,56 @@
   "panels": [
     {
       "id": 1,
-      "type": "barchart",
-      "title": "Метрики: полная vs сжатая",
+      "type": "table",
+      "title": "Метрики: полная vs сжатая, % (относ.)",
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
       "datasource": {"type": "influxdb", "uid": ""},
       "targets": [
         {
           "refId": "A",
           "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{"displayName": "delta", "desc": false}]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "center"},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "delta"},
+            "properties": [
+              {"id": "custom.displayMode", "value": "color-background"},
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": -0.01},
+                    {"color": "green", "value": 0}
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "barchart",
+      "title": "Метрики: полная vs сжатая",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with full: 100.0, compressed: r.compressed / r.full * 100.0}))\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
         }
       ],
       "options": {
@@ -64,10 +106,52 @@
         }
     },
     {
-      "id": 2,
+      "id": 3,
+      "type": "table",
+      "title": "Отклонения сжатой модели от полной",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "datasource": {"type": "influxdb", "uid": ""},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"delta_pct\" or r._field == \"delta\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> sort(columns: [\"delta_pct\"], desc: false)\n  |> group()"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{"displayName": "delta", "desc": false}]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "center"},
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "delta"},
+            "properties": [
+              {"id": "custom.displayMode", "value": "color-background"},
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": -0.01},
+                    {"color": "green", "value": 0}
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
       "type": "barchart",
       "title": "Δ% отклонение сжатой модели",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
       "datasource": {"type": "influxdb", "uid": ""},
       "targets": [
         {
@@ -110,10 +194,10 @@
       }
     },
     {
-      "id": 3,
+      "id": 5,
       "type": "table",
       "title": "Per-class: где просела сжатая модель",
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 18},
       "datasource": {"type": "influxdb", "uid": ""},
       "targets": [
         {
@@ -152,10 +236,10 @@
       }
     },
     {
-      "id": 4,
+      "id": 6,
       "type": "barchart",
-      "title": "Per-class: full vs compressed",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
+      "title": "Per-class: сравнение полной и сжатой моделей, % (абсол.)",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 18},
       "datasource": {"type": "influxdb", "uid": ""},
       "targets": [
         {
@@ -187,7 +271,7 @@
           "mappings": [],
           "min": 0,
           "max": 1,
-          "unit": "short"
+          "unit": "percentunit"
         },
         "overrides": [
           {
