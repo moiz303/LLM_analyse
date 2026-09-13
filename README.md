@@ -1,5 +1,10 @@
 # Gemma Quantization
 
+![Python](https://img.shields.io/badge/Python-3.11%2B-green)
+![Grafana](https://img.shields.io/badge/Grafana-10-orange)
+![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7%2B-red)
+![Docker](https://img.shields.io/badge/Docker-blue)
+
 <!-- добавьте скриншот дашборда -->
 
 ## О проекте
@@ -34,7 +39,7 @@
 - **InfluxDB 2.7** — time-series база данных
 - **Grafana 10** — визуализация и дашборды
 - **Docker / Docker Compose** — развёртывание сервисов
-- **Python 3** + `influxdb-client`, `python-dotenv` — инжест данных
+- **Python 3.11** + `influxdb-client`, `python-dotenv` — инжест данных
 
 ---
 
@@ -283,3 +288,13 @@ docker compose up -d grafana
 | В UI InfluxDB «пусто», хотя точки записаны | Вы смотрите метаданные бакета, а не данные | Используйте **Data Explorer** (Script Editor) |
 | Grafana игнорирует пароль из `.env` (`admin`/`admin`) | БД Grafana уже инициализирована со старым паролем | Пересоздайте volume `grafana_data` |
 | Дашборд не появился после правки файла | Битый JSON или файл не примонтирован | Проверьте `docker compose logs grafana`, валидность JSON и монтирование `./provisioning` |
+
+---
+
+## Лицензия
+
+Created as part of MIEM HSE project activities.
+
+## Ссылки
+
+- Kaggle ноутбук / источник `comparison.json`: https://www.kaggle.com/code/flyin123/gemma-notebook
