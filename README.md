@@ -5,7 +5,13 @@
 ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7%2B-red)
 ![Docker](https://img.shields.io/badge/Docker-blue)
 
-<!-- добавьте скриншот дашборда -->
+---
+
+<p align="center">
+  <img src="src/img/preview.jpg" width="1024" alt="Предпросмотр продукта">
+</p>
+
+---
 
 ## О проекте
 
