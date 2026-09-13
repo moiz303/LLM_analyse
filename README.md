@@ -1,6 +1,6 @@
 # Gemma Quantization
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-green)
+![Python](https://img.shields.io/badge/Python-3.8%2B-green)
 ![Grafana](https://img.shields.io/badge/Grafana-10%2B-orange)
 ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7%2B-red)
 ![Docker](https://img.shields.io/badge/Docker-blue)
@@ -39,7 +39,7 @@
 - **InfluxDB 2.7** — time-series база данных
 - **Grafana 10** — визуализация и дашборды
 - **Docker / Docker Compose** — развёртывание сервисов
-- **Python 3.11** + `influxdb-client`, `python-dotenv` — инжест данных
+- **Python 3.8** + `influxdb-client`, `python-dotenv` — инжест данных
 
 ---
 
