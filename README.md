@@ -50,7 +50,7 @@
 1. **Склонируйте репозиторий**
 
    ```bash
-   git clone moiz303/LLM_analyse
+   git clone https://github.com/moiz303/LLM_analyse
    cd ./LLM_analyse
    ```
 
