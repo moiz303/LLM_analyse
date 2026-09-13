@@ -1,7 +1,7 @@
 # Gemma Quantization
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green)
-![Grafana](https://img.shields.io/badge/Grafana-10-orange)
+![Grafana](https://img.shields.io/badge/Grafana-10%2B-orange)
 ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7%2B-red)
 ![Docker](https://img.shields.io/badge/Docker-blue)
 
