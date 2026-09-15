@@ -1,6 +1,22 @@
 version: "3.8"
 
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: model_backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - INFLUXDB_PORT=${INFLUXDB_PORT}
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
   influxdb:
     image: influxdb:2.7
     container_name: model_influxdb
@@ -27,11 +43,13 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GRAFANA_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - influxdb
+      - backend
     restart: unless-stopped
 
 volumes:
