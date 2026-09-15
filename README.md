@@ -6,6 +6,8 @@
 ![Docker](https://img.shields.io/badge/Docker-blue)
 
 ---
+ВАЖНО!!! СЕЙЧАС README НЕАКТУАЛЕН, НА НЕГО ОПИРАТЬСЯ НЕЛЬЗЯ!
+---
 
 <p align="center">
   <img src="src/img/preview.jpg" width="1024" alt="Предпросмотр продукта">
