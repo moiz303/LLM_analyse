@@ -1,6 +1,3 @@
-"""
-Pydantic models __init__.
-"""
 from app.models.experiment import (
     ExperimentJSON,
     ExperimentMeta,

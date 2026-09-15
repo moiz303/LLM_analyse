@@ -1,6 +1,3 @@
-"""
-Model configuration and prediction models.
-"""
 from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
@@ -45,4 +42,4 @@ class PredictionResponse(BaseModel):
     prediction_mode: str
     prediction: Dict[str, float]
     baseline: Dict[str, float]
-    support: Dict[str, any] = {}  # Placeholder for flexible support data
+    support: Dict[str, any] = {}

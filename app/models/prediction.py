@@ -1,6 +1,3 @@
-"""
-Prediction models.
-"""
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
