@@ -1,6 +1,3 @@
-"""
-Main FastAPI application.
-"""
 import os
 from contextlib import asynccontextmanager
 from typing import Optional, Dict, Any
@@ -18,7 +15,7 @@ _services: Optional[Dict[str, Any]] = None
 
 
 def get_app_services() -> Optional[Dict[str, Any]]:
-    """Get the global services dictionary."""
+    """Get the global services' dictionary."""
     return _services
 
 
@@ -26,11 +23,7 @@ def get_app_services() -> Optional[Dict[str, Any]]:
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown."""
     global _services
-    
-    # Startup
     print("Starting up backend services...")
-    
-    # Initialize services
     experiment_store = ExperimentStore()
     
     # Load initial experiment from comparison.json if no experiments exist
@@ -118,8 +111,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
-    # Include routers
+
     app.include_router(health_router)
     app.include_router(model_router)
     app.include_router(predict_router)

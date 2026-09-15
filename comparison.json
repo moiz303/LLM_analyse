@@ -1,5 +1,5 @@
 {
-  "experiment_id": "exp_001",
+  "experiment_id": "exp_000",
   "meta": {
     "full_model": "resnet50_fp32",
     "compressed_model": "resnet50_int8",

@@ -1,6 +1,3 @@
-"""
-Инжест comparison.json в InfluxDB. Читает конфиг из .env
-"""
 import argparse
 import json
 import sys
@@ -24,7 +21,7 @@ DEFAULTS = dict(
 
 
 def parse_timestamp(raw: str) -> datetime:
-    """Строго парсим timestamp. Любая проблема — падаем сразу."""
+    """Timestamp parsing. Drops in case of any problem."""
     if not raw:
         raise ValueError("meta.timestamp отсутствует в JSON")
     ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
@@ -32,7 +29,7 @@ def parse_timestamp(raw: str) -> datetime:
         ts = ts.replace(tzinfo=timezone.utc)
     if ts > datetime.now(timezone.utc):
         raise ValueError(
-            f"timestamp {ts.isoformat()} в будущем — проверьте формат даты "
+            f"timestamp {ts.isoformat()} is in the future — check out date format "
             f"(YYYY-MM-DD, а не DD-MM-YYYY)"
         )
     return ts
@@ -46,7 +43,7 @@ def ingest(json_path: str, **cfg):
     try:
         ts = parse_timestamp(meta.get("timestamp", ""))
     except ValueError as e:
-        print(f"Недопустимый timestamp: {e}")
+        print(f"Unavailable timestamp: {e}")
         sys.exit(1)
 
     full_name = meta.get("full_model", "full_model")
@@ -88,17 +85,17 @@ def ingest(json_path: str, **cfg):
         )
 
     if not points:
-        print("В JSON не нашлось ни одной метрики")
+        print("No metrics in JSON")
         sys.exit(1)
 
     write_api.write(bucket=cfg["bucket"], record=points)
-    print(f"Записано {len(points)} точек в InfluxDB ({cfg['url']}), time={ts.isoformat()}")
+    print(f"Written {len(points)} points to the InfluxDB ({cfg['url']}), time={ts.isoformat()}")
     client.close()
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Ingest comparison JSON into InfluxDB")
-    p.add_argument("json_path", help="Путь к comparison.json")
+    p.add_argument("json_path", help="Path to comparison.json")
     p.add_argument("--url", default=DEFAULTS["url"])
     p.add_argument("--token", default=DEFAULTS["token"])
     p.add_argument("--org", default=DEFAULTS["org"])
@@ -106,7 +103,7 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     if not args.token:
-        print("Токен не задан. Заполните INFLUXDB_TOKEN в .env")
+        print("Token not found. Fill the INFLUXDB_TOKEN in the .env")
         sys.exit(1)
 
     ingest(args.json_path, url=args.url, token=args.token,
