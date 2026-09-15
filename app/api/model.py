@@ -1,6 +1,3 @@
-"""
-API endpoints for model configuration.
-"""
 from fastapi import APIRouter, HTTPException
 
 from app.models.model_config import ModelConfiguration

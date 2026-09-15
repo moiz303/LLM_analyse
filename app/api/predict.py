@@ -1,6 +1,3 @@
-"""
-API endpoints for predictions.
-"""
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
@@ -14,9 +11,6 @@ router = APIRouter(prefix="/api/predict", tags=["prediction"])
 async def predict(request: PredictionRequest):
     """
     Make a prediction for the given parameter configuration.
-    
-    Request body:
-        parameters: Dictionary of parameter values
     
     Returns:
         Prediction result including:
@@ -58,7 +52,6 @@ async def predict(request: PredictionRequest):
                 timestamp=datetime.now(timezone.utc)
             )
         except Exception as e:
-            # Log error but don't fail the request
             print(f"Warning: Could not write prediction to InfluxDB: {e}")
     
     return result
