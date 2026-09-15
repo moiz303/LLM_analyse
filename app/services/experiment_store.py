@@ -1,6 +1,3 @@
-"""
-Experiment Store - stores and retrieves experiment JSONs.
-"""
 import json
 import os
 from pathlib import Path

@@ -1,6 +1,3 @@
-"""
-Prediction Service - orchestrates prediction logic.
-"""
 from typing import Dict, Tuple, Optional
 from app.models.experiment import ExperimentJSON
 from app.models.prediction import PredictionResult
@@ -29,8 +26,7 @@ class PredictionService:
         """
         if len(self.all_experiments) == 0:
             return (0.0, "low")
-        
-        # Calculate minimum distance to any known experiment configuration
+
         min_distance = float('inf')
         
         for exp in self.all_experiments:
@@ -55,8 +51,7 @@ class PredictionService:
             
             distance = distance ** 0.5
             min_distance = min(min_distance, distance)
-        
-        # Convert distance to support score (closer = higher support)
+
         # Score of 1.0 means exact match, 0.0 means very far
         if min_distance == 0:
             score = 1.0
@@ -77,9 +72,6 @@ class PredictionService:
     def predict(self, configuration: Dict[str, float]) -> PredictionResult:
         """
         Make a prediction for the given configuration.
-        
-        Args:
-            configuration: Dictionary of parameter values
             
         Returns:
             PredictionResult with predictions, baseline, and support info

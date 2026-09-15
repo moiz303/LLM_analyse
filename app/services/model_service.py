@@ -1,6 +1,3 @@
-"""
-Model Service - provides model configuration and baseline data.
-"""
 import json
 from pathlib import Path
 from typing import Dict, Optional
@@ -25,8 +22,7 @@ class ModelService:
         baseline_exp = self.experiment_store.get_baseline_experiment()
         if baseline_exp is None:
             return None
-        
-        # Build model configuration from experiment
+
         parameters = {}
         
         # Extract parameters from configuration with default UI ranges

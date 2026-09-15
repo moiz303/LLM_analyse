@@ -1,6 +1,3 @@
-"""
-InfluxDB Service - handles writing data to InfluxDB.
-"""
 import os
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -9,7 +6,6 @@ from dotenv import load_dotenv
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-# Load environment variables
 load_dotenv()
 
 
@@ -47,16 +43,14 @@ class InfluxDBService:
             self._client = None
             self._write_api = None
     
-    def write_prediction(
-        self,
+    def write_prediction(self,
         model_id: str,
         configuration: Dict[str, float],
         predictions: Dict[str, float],
         support_score: float,
         support_level: str,
         prediction_mode: str,
-        timestamp: Optional[datetime] = None
-    ):
+        timestamp: Optional[datetime] = None):
         """Write a prediction to InfluxDB."""
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
