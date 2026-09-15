@@ -1,6 +1,3 @@
-"""
-Unit tests for the sensitivity predictor.
-"""
 import pytest
 from app.models.experiment import ExperimentJSON
 from app.predictors.sensitivity import SensitivityPredictor
@@ -10,7 +7,7 @@ from app.predictors.sensitivity import SensitivityPredictor
 def baseline_experiment():
     """Create a baseline experiment for testing."""
     data = {
-        "experiment_id": "exp_001",
+        "experiment_id": "exp_000",
         "meta": {
             "full_model": "model_fp16",
             "compressed_model": "model_nf4",

@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
             
             # Add experiment_id if missing
             if "experiment_id" not in data:
-                data["experiment_id"] = "exp_001"
+                data["experiment_id"] = "exp_000"
             
             # Add configuration if missing (extract from metrics or use defaults)
             if "configuration" not in data:

@@ -1,6 +1,3 @@
-"""
-Unit tests for experiment validation.
-"""
 import pytest
 from app.models.experiment import ExperimentJSON, ExperimentMeta, MetricData
 
@@ -11,7 +8,7 @@ class TestExperimentValidation:
     def test_valid_experiment(self):
         """Test that a valid experiment is accepted."""
         data = {
-            "experiment_id": "exp_001",
+            "experiment_id": "exp_000",
             "meta": {
                 "full_model": "model_fp16",
                 "compressed_model": "model_nf4",
@@ -36,7 +33,7 @@ class TestExperimentValidation:
         }
         
         exp = ExperimentJSON.model_validate(data)
-        assert exp.experiment_id == "exp_001"
+        assert exp.experiment_id == "exp_000"
         assert len(exp.metrics) == 1
     
     def test_missing_experiment_id(self):
@@ -58,7 +55,7 @@ class TestExperimentValidation:
     def test_invalid_accuracy_range(self):
         """Test that accuracy outside [0, 1] is rejected."""
         data = {
-            "experiment_id": "exp_001",
+            "experiment_id": "exp_000",
             "meta": {
                 "full_model": "model_fp16",
                 "compressed_model": "model_nf4",
@@ -75,7 +72,7 @@ class TestExperimentValidation:
     def test_negative_latency(self):
         """Test that negative latency is rejected."""
         data = {
-            "experiment_id": "exp_001",
+            "experiment_id": "exp_000",
             "meta": {
                 "full_model": "model_fp16",
                 "compressed_model": "model_nf4",
