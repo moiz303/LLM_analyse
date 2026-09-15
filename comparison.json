@@ -1,22 +1,48 @@
 {
+  "experiment_id": "exp_001",
   "meta": {
     "full_model": "resnet50_fp32",
     "compressed_model": "resnet50_int8",
     "timestamp": "2026-08-08T10:30:00Z"
   },
+  "configuration": {
+    "param_a": 0.82,
+    "param_b": 0.47,
+    "param_c": 1.15
+  },
+  "critical_parameters": {
+    "param_a": {
+      "critical": true,
+      "baseline": 0.82,
+      "min": 0.70,
+      "max": 0.90
+    },
+    "param_b": {
+      "critical": false,
+      "baseline": 0.47,
+      "min": 0.35,
+      "max": 0.60
+    },
+    "param_c": {
+      "critical": true,
+      "baseline": 1.15,
+      "min": 0.95,
+      "max": 1.35
+    }
+  },
   "metrics": [
-    {"param": "accuracy_top1",  "full": 0.7613, "compressed": 0.7589},
-    {"param": "accuracy_top5",  "full": 0.9287, "compressed": 0.9261},
-    {"param": "f1_macro",       "full": 0.7542, "compressed": 0.7498},
-    {"param": "latency_ms",     "full": 45.2,   "compressed": 12.8},
-    {"param": "memory_mb",      "full": 512.0,  "compressed": 128.0},
-    {"param": "params_count_m", "full": 25.6,   "compressed": 25.6}
+    {"param": "accuracy_top1", "full": 0.7613, "compressed": 0.7589},
+    {"param": "accuracy_top5", "full": 0.9287, "compressed": 0.9261},
+    {"param": "f1_macro", "full": 0.7542, "compressed": 0.7498},
+    {"param": "latency_ms", "full": 45.2, "compressed": 12.8},
+    {"param": "memory_mb", "full": 512.0, "compressed": 128.0},
+    {"param": "params_count_m", "full": 25.6, "compressed": 25.6}
   ],
   "per_class": [
-    {"class": "cat",    "full": 0.82, "compressed": 0.80},
-    {"class": "dog",    "full": 0.91, "compressed": 0.89},
-    {"class": "bird",   "full": 0.67, "compressed": 0.55},
-    {"class": "car",    "full": 0.88, "compressed": 0.87},
+    {"class": "cat", "full": 0.82, "compressed": 0.80},
+    {"class": "dog", "full": 0.91, "compressed": 0.89},
+    {"class": "bird", "full": 0.67, "compressed": 0.55},
+    {"class": "car", "full": 0.88, "compressed": 0.87},
     {"class": "flower", "full": 0.73, "compressed": 0.70}
   ]
 }
