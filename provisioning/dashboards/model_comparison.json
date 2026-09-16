@@ -1,143 +1,377 @@
 {
-  "uid": "model-cmp",
-  "title": "Full vs Compressed Model",
-  "tags": ["ml", "comparison"],
-  "timezone": "browser",
-  "schemaVersion": 39,
-  "version": 1,
-  "refresh": "5s",
-  "time": {"from": "now-1h", "to": "now"},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
   "panels": [
     {
-      "id": 1,
-      "type": "timeseries",
-      "title": "Accuracy Top1: Actual vs Predicted",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {
-          "refId": "Actual",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"compressed\" or r._field == \"full\")\n  |> filter(fn: (r) => r.param == \"accuracy_top1\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> map(fn: (r) => ({r with _field: r.result_type + \"_\" + r._field}))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
-          "alias": "Actual"
-        },
-        {
-          "refId": "Predicted",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.param == \"accuracy_top1\")\n  |> filter(fn: (r) => r.result_type == \"predicted\")\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])",
-          "alias": "Predicted"
-        }
-      ],
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "palette-classic"},
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 4,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.result_type == \"actual\" and r.metric == \"accuracy_top1\" and r._field == \"value\") |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Baseline / actual accuracy",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 4,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 18,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull", "min", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"accuracy_top1\" and r._field == \"value\") |> group(columns: [\"result_type\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Accuracy: actual vs predicted",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"f1_macro\" and r._field == \"value\") |> group(columns: [\"result_type\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "F1 macro: actual vs predicted",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "memory_mb"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decmbytes"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and (r._field == \"latency_ms\" or r._field == \"memory_mb\")) |> group(columns: [\"result_type\"])",
+          "refId": "A"
+        }
+      ],
+      "title": "Resource metrics",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\") |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Prediction support score",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 18
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Interactive prediction history",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {"type": "linear"},
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {"group": "A", "mode": "none"},
-            "thresholdsStyle": {"mode": "off"}
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": [{"color": "green", "value": null}]
-          },
-          "unit": "percentunit"
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
-        "overrides": [
-          {"matcher": {"id": "byRegexp", "options": ".*Actual.*"}, "properties": [{"id": "color", "value": {"fixedColor": "blue", "mode": "fixed"}}]},
-          {"matcher": {"id": "byRegexp", "options": ".*Predicted.*"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
-        ]
+        "overrides": []
       },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 7,
       "options": {
-        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
-        "tooltip": {"mode": "single", "sort": "none"}
-      }
-    },
-    {
-      "id": 2,
-      "type": "timeseries",
-      "title": "F1 Macro: Actual vs Predicted",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-      "datasource": {"type": "influxdb", "uid": ""},
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "recalculate calculations": true,
+          "show": false
+        },
+        "showHeader": true
+      },
       "targets": [
-        {"refId": "Actual", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"compressed\" or r._field == \"full\")\n  |> filter(fn: (r) => r.param == \"f1_macro\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> map(fn: (r) => ({r with _field: r.result_type + \"_\" + r._field}))\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])"},
-        {"refId": "Predicted", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.param == \"f1_macro\")\n  |> filter(fn: (r) => r.result_type == \"predicted\")\n  |> keep(columns: [\"_time\", \"_value\", \"_field\"])"},
-        {"refId": "Baseline", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.param == \"f1_macro\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> last()"}
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r._field == \"value\") |> keep(columns: [\"_time\", \"metric\", \"result_type\", \"prediction_mode\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
+          "refId": "A"
+        }
       ],
-      "fieldConfig": {
-        "defaults": {"unit": "percentunit", "min": 0, "max": 1}
-      }
-    },
-    {
-      "id": 3,
-      "type": "timeseries",
-      "title": "Latency: Actual vs Predicted",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {"refId": "Actual", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> filter(fn: (r) => r.param == \"latency_ms\")\n  |> filter(fn: (r) => r.result_type == \"actual\")"},
-        {"refId": "Predicted", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.param == \"latency_ms\")\n  |> filter(fn: (r) => r.result_type == \"predicted\")"}
-      ],
-      "fieldConfig": {"defaults": {"unit": "ms"}}
-    },
-    {
-      "id": 4,
-      "type": "timeseries",
-      "title": "Memory: Actual vs Predicted",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {"refId": "Actual", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> filter(fn: (r) => r.param == \"memory_mb\")\n  |> filter(fn: (r) => r.result_type == \"actual\")"},
-        {"refId": "Predicted", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.param == \"memory_mb\")\n  |> filter(fn: (r) => r.result_type == \"predicted\")"}
-      ],
-      "fieldConfig": {"defaults": {"unit": "bytes"}}
-    },
-    {
-      "id": 5,
-      "type": "table",
-      "title": "Prediction History",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {"refId": "A", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.result_type == \"predicted\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"param\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"accuracy_top1\", \"f1_macro\", \"latency_ms\", \"memory_mb\", \"support_level\"])", "alias": "Predictions"}
-      ],
-      "options": {"showHeader": true, "sortBy": [{"displayName": "_time", "desc": true}]}
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Baseline Metrics (Actual)",
-      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 24},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {"refId": "Accuracy", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.param == \"accuracy_top1\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> last()"},
-        {"refId": "F1", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.param == \"f1_macro\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> last()"},
-        {"refId": "Latency", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.param == \"latency_ms\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> last()"},
-        {"refId": "Memory", "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r.param == \"memory_mb\")\n  |> filter(fn: (r) => r.result_type == \"actual\")\n  |> filter(fn: (r) => r._field == \"compressed\")\n  |> last()"}
-      ],
-      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-      "fieldConfig": {
-        "defaults": {"mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}},
-        "overrides": [
-          {"matcher": {"id": "byName", "options": "Accuracy"}, "properties": [{"id": "unit", "value": "percentunit"}]},
-          {"matcher": {"id": "byName", "options": "F1"}, "properties": [{"id": "unit", "value": "percentunit"}]},
-          {"matcher": {"id": "byName", "options": "Latency"}, "properties": [{"id": "unit", "value": "ms"}]},
-          {"matcher": {"id": "byName", "options": "Memory"}, "properties": [{"id": "unit", "value": "bytes"}]}
-        ]
-      }
+      "title": "Actual and predicted metric history",
+      "type": "table"
     }
-  ]
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["model-compression", "actual-vs-predicted"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Model Comparison",
+  "uid": "model-comparison",
+  "version": 1
 }

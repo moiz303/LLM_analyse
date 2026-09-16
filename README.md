@@ -1,308 +1,180 @@
-# Gemma Quantization
+# Interactive Model Compression Backend
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-green)
-![Grafana](https://img.shields.io/badge/Grafana-10%2B-orange)
-![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7%2B-red)
-![Docker](https://img.shields.io/badge/Docker-blue)
+Backend and local observability stack for the interactive model-compression demo.
+The expensive black-box experiment runs offline. The API uses its result as a
+baseline and answers slider changes through an explainable sensitivity predictor.
 
----
-ВАЖНО!!! СЕЙЧАС README НЕАКТУАЛЕН, НА НЕГО ОПИРАТЬСЯ НЕЛЬЗЯ!
----
+## Architecture
 
-<p align="center">
-  <img src="src/img/preview.jpg" width="1024" alt="Предпросмотр продукта">
-</p>
+```text
+comparison.json (source of truth)
+        ├── FastAPI validation / model configuration
+        ├── data/model.json (user buffer)
+        ├── data/experiments/*.json (history)
+        └── ingest.py ──> InfluxDB ──> Grafana
 
----
-
-## О проекте
-
-Проект визуализирует сравнение **полной** ML-модели и её **сжатой** (квантизованной) версии. Результаты прогона собираются во внешний файл `comparison.json`, записываются в **InfluxDB** и отображаются в **Grafana** в виде парных панелей «график + таблица». Есть переключатель по метрикам и автоматическое масштабирование каждой панели под свою величину.
-
-### Архитектура
-
-```
-┌────────────────────┐
-│  comparison.json   │   Результаты прогона (создаётся отдельно, в репо не входит)
-└─────────┬──────────┘
-          │ читает
-          ▼
-┌────────────────────┐
-│    ingest.py       │   Конфиг подключения берёт из .env
-└─────────┬──────────┘
-          │ пишет точки (2 measurement'а)
-          ▼
-┌────────────────────┐
-│   InfluxDB 2.7     │   Docker, :8086, bucket: model_comparison
-└─────────┬──────────┘
-          │ читает через Flux
-          ▼
-┌────────────────────┐
-│    Grafana 10      │   Docker, :3000, дашборд и datasource из provisioning
-└────────────────────┘
+Frontend ──POST /api/predict──> FastAPI ──> InfluxDB
 ```
 
-### Стек
+The three data tiers are intentionally separate:
 
-- **InfluxDB 2.7** — time-series база данных
-- **Grafana 10** — визуализация и дашборды
-- **Docker / Docker Compose** — развёртывание сервисов
-- **Python 3.8** + `influxdb-client`, `python-dotenv` — инжест данных
+* `comparison.json` is never changed automatically and is used by Reset to
+  baseline.
+* `data/model.json` is the current slider buffer. It is initialized from the
+  source file and updated after successful predictions.
+* `data/experiments/` contains validated experiment snapshots. They are used
+  for support-distance calculations and history.
 
----
+If the source file is unavailable, the backend falls back to
+`data/model.json`, then to the newest file in `data/experiments/`. The source
+file is always preferred when it exists.
 
-## Быстрый старт (Quickstart)
+## Quick start
 
-### Требования
+Requirements: Docker with Compose and Python 3.11+ for running `ingest.py`
+locally.
 
-- [Docker](https://docs.docker.com/get-docker/) и Docker Compose
-- Python 3.8+
-
-### Шаги
-
-1. **Склонируйте репозиторий**
-
-   ```bash
-   git clone https://github.com/moiz303/LLM_analyse
-   cd ./LLM_analyse
-   ```
-
-
-2. **Создайте `.env` из шаблона и заполните значения**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Откройте `.env` и задайте пароли и токен. Набор переменных описан в разделе [Переменные окружения](#переменные-окружения).
-
-
-3. **Пропишите токен в datasource Grafana**
-
-   В файле `provisioning/datasources/influxdb.yml` найдите поле `token:` и впишите в него **то же значение**, что в `.env` → `INFLUXDB_TOKEN`. В репозитории это поле намеренно оставлено пустым.
-
-
-4. **Подготовьте `comparison.json`**
-
-   Этот файл **создаётся отдельно** (например, выгружается из прогона модели) и в репозиторий не входит. Формат описан в разделе [Формат `comparison.json`](#формат-comparisonjson). Поместите его в корень проекта.
-
-
-5. **Поднимите сервисы**
-
-   ```bash
-   docker compose up -d
-   ```
-
-   При первом запуске InfluxDB автоматически создаст организацию, бакет и токен из `.env`.
-
-
-6. **Установите Python-зависимости и загрузите данные**
-
-   ```bash
-   pip install -r requirements.txt
-   python ingest.py comparison.json
-   ```
-
-   Ожидаемый вывод: `Записано N точек в InfluxDB (...)`.
-
-
-7. **Откройте дашборд**
-
-   Перейдите на `http://localhost:3000`. Логин — `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` из `.env` (по умолчанию `admin` / `admin`). Дашборд появляется в папке **ML Monitoring**.
-
----
-
-## Структура проекта
-
-```
-.
-├── .env.example                       # шаблон переменных окружения
-├── .gitignore
-├── docker-compose.yml                 # InfluxDB + Grafana
-├── comparison.json                    # входные данные (создаётся отдельно)
-├── ingest.py                          # запись JSON в InfluxDB
-├── requirements.txt
-└── provisioning/
-    ├── datasources/
-    │   └── influxdb.yml               # подключение InfluxDB → Grafana
-    └── dashboards/
-        ├── dashboard.yml              # провайдер дашбордов
-        └── model_comparison.json      # сам дашборд
+```bash
+cp .env.example .env
 ```
 
----
+Fill in local-only values in `.env`:
 
-## Формат `comparison.json`
+* `INFLUXDB_PASSWORD` and `INFLUXDB_TOKEN` initialize InfluxDB.
+* `GRAFANA_ADMIN_PASSWORD` sets the Grafana admin password.
+* `BACKEND_PORT`, `INFLUXDB_PORT`, and `GRAFANA_PORT` are host-facing ports.
+* `*_CONTAINER_PORT` and `INFLUXDB_URL` are internal Docker connection settings.
+* Keep `INFLUXDB_ORG=mlops`, `INFLUXDB_BUCKET=model_comparison`, and
+  `INFLUXDB_RETENTION=365d` unless the frontend has a different contract.
+* `FRONTEND_ORIGINS` should contain only the frontend origins, such as
+  `http://localhost:5173`.
 
-Файл создаётся отдельно и должен соответствовать схеме ниже. `ingest.py` читает поля `metrics` и `per_class` и сам вычисляет производные (`delta`, `delta_pct`).
+Start all services:
+
+```bash
+docker compose up -d --build
+```
+
+The services are on one Docker network and are available at:
+
+* Backend: `http://localhost:8000`
+* InfluxDB: `http://localhost:8086`
+* Grafana: `http://localhost:3000`
+* Dashboard iframe:
+  `http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk`
+
+The frontend can use:
+
+```env
+VITE_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
+```
+
+Load the actual black-box result once after InfluxDB is ready:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r backend/requirements.txt
+python backend/ingest.py comparison.json
+```
+
+The script validates the canonical experiment contract before writing anything.
+Invalid data is neither stored as an experiment nor written to InfluxDB.
+
+## API
+
+### `GET /health`
+
+Returns `{ "status": "ok" }`.
+
+### `GET /api/model`
+
+Returns model ID, current configuration, slider UI ranges, physical valid
+ranges, critical flags, sensitivity data, baseline metrics, metric direction,
+and constraints. The frontend does not need to hardcode model parameters.
+
+### `POST /api/predict`
+
+Request:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "meta": {
-      "type": "object",
-      "properties": {
-        "full_model": {"type": "string"},
-        "compressed_model": {"type": "string"},
-        "timestamp": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": ["full_model", "compressed_model", "timestamp"],
-      "additionalProperties": false
-    },
-    "metrics": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "param": {"type": "string"},
-          "full": {"type": "number"},
-          "compressed": {"type": "number"}
-        },
-        "required": ["param", "full", "compressed"],
-        "additionalProperties": false
-      },
-      "minItems": 1
-    },
-    "per_class": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "class": {
-            "type": "string"
-          },
-          "full": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          },
-          "compressed": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          }
-        },
-        "required": ["class", "full", "compressed"],
-        "additionalProperties": false
-      },
-      "minItems": 1
-    }
-  },
-  "required": ["meta", "metrics", "per_class"],
-  "additionalProperties": false
+  "parameters": {
+    "param_a": 0.76,
+    "param_b": 0.47,
+    "param_c": 1.15
+  }
 }
 ```
 
-| Поле | Тип | Назначение |
-|------|-----|------------|
-| `meta.full_model` | string | Имя полной модели (тег) |
-| `meta.compressed_model` | string | Имя сжатой модели (тег) |
-| `meta.timestamp` | string, ISO 8601 | Метка времени точек |
-| `metrics[].param` | string | Название метрики (тег, ось X) |
-| `metrics[].full` / `.compressed` | number | Значения полной / сжатой модели |
-| `per_class[].class` | string | Имя класса (тег, ось X) |
-| `per_class[].full` / `.compressed` | number | Значения по классу |
+The backend validates the complete configuration, predicts quality/resource
+metrics, clamps predictions to physical constraints, calculates support from
+the nearest known experiment, updates `data/model.json`, and writes a
+`result_type=predicted` record to InfluxDB. `support` is an extrapolation
+indicator, not a probability of correctness.
 
-> **Важно про `timestamp`:** значение должно быть валидным ISO 8601 и **не из будущего**, иначе InfluxDB отбросит точки (ошибка `422` / нарушение retention). Формат даты — `ГГГГ-ММ-ДД`, не перепутайте месяц и день.
+### `POST /api/reset`
 
----
+Always reads the source `comparison.json`, restores `data/model.json`, and
+predicts the source configuration. The returned prediction is anchored exactly
+to the compressed metrics from the source experiment.
 
-## For Devs
+### `GET /api/experiments`
 
-### Как устроен пайплайн
+Lists validated experiment snapshots. `GET /api/experiments/{experiment_id}`
+returns one snapshot. `POST /api/experiments` validates and stores a canonical
+experiment and ingests its actual compressed metrics.
 
-`ingest.py` разбирает `comparison.json` и пишет точки в два measurement'а:
+## Actual vs predicted semantics
 
-| Measurement | Теги | Поля |
-|-------------|------|------|
-| `model_metric` | `param`, `full_model`, `compressed_model` | `full`, `compressed`, `delta`, `delta_pct` |
-| `per_class_metric` | `class`, `full_model`, `compressed_model` | `full`, `compressed`, `delta` |
+Actual points are produced by `ingest.py` or the experiment ingestion endpoint:
 
-Панели дашборда читают их через **Flux**-запросы. Ключевой приём для столбчатых графиков — `pivot(...)`, который превращает «длинный» формат InfluxDB в «широкий» (строка = категория, колонки = `full`/`compressed`), плюс финальный `group()`, чтобы свести всё в один фрейм.
+* `result_type=actual`
+* `prediction_mode=black_box`
+* value is the measured compressed result from the black-box experiment
 
-### Переменные окружения
+Interactive API calls produce separate points:
 
-Все переменные живут в `.env` (шаблон — `.env.example`).
+* `result_type=predicted`
+* `prediction_mode=sensitivity_model`
+* value is calculated by the backend surrogate
 
-| Переменная | Описание | Пример                     |
-|------------|----------|----------------------------|
-| `INFLUXDB_PORT` | Порт InfluxDB | `8086`                     |
-| `INFLUXDB_USERNAME` | Админ InfluxDB | `admin` (по умолчанию)     |
-| `INFLUXDB_PASSWORD` | Пароль админа InfluxDB | `<сложный пароль>`         |
-| `INFLUXDB_ORG` | Организация InfluxDB | `mlops`                    |
-| `INFLUXDB_BUCKET` | Бакет | `model_comparison`         |
-| `INFLUXDB_TOKEN` | Токен доступа | `<токен>`                  |
-| `INFLUXDB_RETENTION` | Политика хранения | `0` (бессрочно) или `365d` |
-| `GRAFANA_PORT` | Порт Grafana | `3000`                     |
-| `GRAFANA_ADMIN_USER` | Логин админа Grafana | `admin` (по умолчанию)     |
-| `GRAFANA_ADMIN_PASSWORD` | Пароль админа Grafana | `<сложный пароль>`         |
+The frontend never connects to InfluxDB directly. Grafana and the backend use
+the internal address from `INFLUXDB_URL`; a browser uses the host-facing port
+from `INFLUXDB_PORT` or `GRAFANA_PORT`.
 
-> Токен `INFLUXDB_TOKEN` **дублируется** вручную в `provisioning/datasources/influxdb.yml` (`secureJsonData.token`) — держите их в согласованном состоянии.
-
-### Запуск `ingest.py`
+## Tests
 
 ```bash
-python ingest.py comparison.json
-
-# с переопределением параметров подключения:
-python ingest.py comparison.json --url http://localhost:8086 --org mlops --bucket model_comparison --token <токен>
+pytest -q backend/tests
 ```
 
-По умолчанию `--url`, `--org`, `--bucket`, `--token` берутся из `.env`.
+The tests cover experiment validation, missing/invalid fields, baseline
+anchoring, sensitivity changes, physical constraints, API errors, reset
+behavior, and persistence through the application service boundary.
 
-### Как менять дашборд
-
-Канонический источник — `provisioning/dashboards/model_comparison.json`. Два пути:
-
-1. **Править JSON вручную** — изменить запросы/панели в файле и пересоздать дашборд (см. ниже).
-2. **Править в UI и выгружать** — собрать панель в интерфейсе, экспортировать JSON и перезаписать файл. Подробный разбор этого пути — в отдельной инструкции.
-
-Главное правило: **не запрашивать во Flux то, чего в InfluxDB нет** (несуществующие measurement/теги/поля).
-
-После изменения файла пересоздайте дашборд, чтобы Grafana подхватила новую версию:
+The full Docker/InfluxDB/Grafana pipeline has a separate integration
+smoke-check. It starts an isolated Compose project with temporary credentials
+and host ports, then verifies actual and predicted InfluxDB points, the Grafana
+datasource, and the provisioned dashboard:
 
 ```bash
-docker compose stop grafana
-docker volume rm <имя тома>_grafana_data   # имя тома: docker volume ls
-docker compose up -d grafana
+pnpm test:compose
 ```
 
-### Добавление новой области данных
+The check requires a running Docker daemon and exits non-zero on any service,
+API, persistence, or provisioning failure. It removes the temporary Compose
+containers, volumes, and network when it finishes.
 
-Чтобы визуализировать новую сущность (не `metrics`/`per_class`):
+## Configuration and provisioning
 
-1. Добавьте секцию в `comparison.json`.
-2. Добавьте цикл в `ingest.py` с **уникальным** именем `Point("<новое_имя>_metric")` и своим тегом-идентификатором.
-3. Запустите `python ingest.py comparison.json`.
-4. Создайте панель с запросом `filter(... _measurement == "<новое_имя>_metric")`.
+* `Dockerfile` builds the FastAPI service.
+* `docker-compose.yml` starts backend, InfluxDB 2.7, and Grafana 11.
+* `provisioning/datasources/influxdb.yml` creates the Flux datasource from
+  environment variables.
+* `provisioning/dashboards/dashboard.yml` loads the supplied dashboard provider.
+* `provisioning/dashboards/model_comparison.json` shows actual, predicted,
+  baseline, support, resource metrics, and history.
 
-Чтобы визуализировать **уже существующие** данные по-новому (другая таблица, другой график) — меняется только панель и её запрос, `ingest.py` трогать не нужно.
-
----
-
-## Troubleshooting
-
-| Симптом | Вероятная причина | Решение |
-|---------|-------------------|---------|
-| `422 Unprocessable Entity`, точки не пишутся | `timestamp` вне retention или из будущего | Проверьте дату в `meta.timestamp`; при необходимости увеличьте `INFLUXDB_RETENTION` |
-| Дашборд пуст, но данные есть | Неверный временной диапазон на дашборде | Поставьте диапазон, покрывающий `timestamp` точек |
-| `unauthorized: unauthorized access` | Токен в `influxdb.yml` не совпадает с `INFLUXDB_TOKEN` | Синхронизируйте значения |
-| `Bar chart requires a string or time field` | Запрос без `pivot`/`group` вернул «длинный» формат | Добавьте `pivot(...)` и финальный `group()` |
-| В UI InfluxDB «пусто», хотя точки записаны | Вы смотрите метаданные бакета, а не данные | Используйте **Data Explorer** (Script Editor) |
-| Grafana игнорирует пароль из `.env` (`admin`/`admin`) | БД Grafana уже инициализирована со старым паролем | Пересоздайте volume `grafana_data` |
-| Дашборд не появился после правки файла | Битый JSON или файл не примонтирован | Проверьте `docker compose logs grafana`, валидность JSON и монтирование `./provisioning` |
-
----
-
-## Лицензия
-
-Created as part of MIEM HSE project activities.
-
-## Ссылки
-
-- Kaggle ноутбук / источник `comparison.json`: https://www.kaggle.com/code/flyin123/gemma-notebook
+Credentials are read from `.env`, which is ignored by Git. Never commit the
+local token or passwords.

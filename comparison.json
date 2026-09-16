@@ -1,9 +1,10 @@
 {
-  "experiment_id": "exp_000",
+  "experiment_id": "exp_001",
   "meta": {
-    "full_model": "resnet50_fp32",
-    "compressed_model": "resnet50_int8",
-    "timestamp": "2026-08-08T10:30:00Z"
+    "full_model": "gemma_full_fp16",
+    "compressed_model": "gemma_nf4",
+    "timestamp": "2026-09-15T10:00:00Z",
+    "model_id": "gemma_quantization_demo"
   },
   "configuration": {
     "param_a": 0.82,
@@ -14,35 +15,57 @@
     "param_a": {
       "critical": true,
       "baseline": 0.82,
-      "min": 0.70,
-      "max": 0.90
+      "min": 0.7,
+      "max": 0.9,
+      "sensitivity": {
+        "accuracy_top1": 0.025,
+        "f1_macro": 0.022,
+        "latency_ms": 0.1,
+        "memory_mb": 0.08
+      }
     },
     "param_b": {
-      "critical": false,
+      "critical": true,
       "baseline": 0.47,
-      "min": 0.35,
-      "max": 0.60
+      "min": 0.2,
+      "max": 0.8,
+      "sensitivity": {
+        "accuracy_top1": 0.018,
+        "f1_macro": 0.016
+      }
     },
     "param_c": {
-      "critical": true,
+      "critical": false,
       "baseline": 1.15,
-      "min": 0.95,
-      "max": 1.35
+      "min": 0.8,
+      "max": 1.5,
+      "sensitivity": {
+        "latency": 0.08,
+        "memory": 0.06
+      }
     }
   },
   "metrics": [
-    {"param": "accuracy_top1", "full": 0.7613, "compressed": 0.7589},
-    {"param": "accuracy_top5", "full": 0.9287, "compressed": 0.9261},
-    {"param": "f1_macro", "full": 0.7542, "compressed": 0.7498},
-    {"param": "latency_ms", "full": 45.2, "compressed": 12.8},
-    {"param": "memory_mb", "full": 512.0, "compressed": 128.0},
-    {"param": "params_count_m", "full": 25.6, "compressed": 25.6}
+    {
+      "param": "accuracy_top1",
+      "full": 0.7613,
+      "compressed": 0.7589
+    },
+    {
+      "param": "f1_macro",
+      "full": 0.7542,
+      "compressed": 0.7498
+    },
+    {
+      "param": "latency_ms",
+      "full": 45.2,
+      "compressed": 12.8
+    },
+    {
+      "param": "memory_mb",
+      "full": 512,
+      "compressed": 128
+    }
   ],
-  "per_class": [
-    {"class": "cat", "full": 0.82, "compressed": 0.80},
-    {"class": "dog", "full": 0.91, "compressed": 0.89},
-    {"class": "bird", "full": 0.67, "compressed": 0.55},
-    {"class": "car", "full": 0.88, "compressed": 0.87},
-    {"class": "flower", "full": 0.73, "compressed": 0.70}
-  ]
+  "per_class": []
 }
