@@ -1,7 +1,7 @@
 # Интерактивное сравнение сжатия модели
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green)
-![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688)
 ![Grafana](https://img.shields.io/badge/Grafana-11-orange)
 ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-red)
 ![Docker](https://img.shields.io/badge/Docker-blue)
