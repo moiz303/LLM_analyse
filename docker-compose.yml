@@ -17,14 +17,9 @@ services:
       EXPERIMENTS_DIR: /app/data/experiments
     command:
       [
-        "uvicorn",
-        "app.main:app",
-        "--app-dir",
-        "/app/backend",
-        "--host",
-        "${BACKEND_HOST}",
-        "--port",
-        "${BACKEND_CONTAINER_PORT}"
+        "sh",
+        "-c",
+        "python /app/backend/ingest.py /app/comparison.json && exec uvicorn app.main:app --app-dir /app/backend --host \"$${BACKEND_HOST}\" --port \"$${BACKEND_CONTAINER_PORT}\""
       ]
     volumes:
       - ./data:/app/data
