@@ -56,11 +56,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.result_type == \"actual\" and r.metric == \"accuracy_top1\" and r._field == \"value\") |> last()",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"accuracy_top1\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> last() |> rename(columns: {_value: \"value\"})",
           "refId": "A"
         }
       ],
-      "title": "Baseline / actual accuracy",
+      "title": "Accuracy выбранной версии",
       "type": "stat"
     },
     {
@@ -98,11 +98,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"accuracy_top1\" and r._field == \"value\") |> group(columns: [\"result_type\"])",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"accuracy_top1\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
           "refId": "A"
         }
       ],
-      "title": "Accuracy: actual vs predicted",
+      "title": "Accuracy выбранной версии",
       "type": "timeseries"
     },
     {
@@ -116,6 +116,8 @@
             "mode": "palette-classic"
           },
           "decimals": 3,
+          "min": 0,
+          "max": 1,
           "unit": "none"
         },
         "overrides": []
@@ -140,11 +142,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"f1_macro\" and r._field == \"value\") |> group(columns: [\"result_type\"])",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"f1_macro\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
           "refId": "A"
         }
       ],
-      "title": "F1 macro: actual vs predicted",
+      "title": "F1-score выбранной версии",
       "type": "timeseries"
     },
     {
@@ -160,20 +162,7 @@
           "decimals": 2,
           "unit": "ms"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "memory_mb"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "decmbytes"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
@@ -195,11 +184,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and (r._field == \"latency_ms\" or r._field == \"memory_mb\")) |> group(columns: [\"result_type\"])",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"latency_ms\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
           "refId": "A"
         }
       ],
-      "title": "Resource metrics",
+      "title": "Latency выбранной версии",
       "type": "timeseries"
     },
     {
@@ -255,11 +244,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\") |> last()",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> last() |> rename(columns: {_value: \"support_score\"})",
           "refId": "A"
         }
       ],
-      "title": "Prediction support score",
+      "title": "Support пользовательской модели",
       "type": "stat"
     },
     {
@@ -297,11 +286,11 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\")",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> rename(columns: {_value: \"support_score\"})",
           "refId": "A"
         }
       ],
-      "title": "Interactive prediction history",
+      "title": "История support пользовательской модели",
       "type": "timeseries"
     },
     {
@@ -335,7 +324,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 35
       },
       "id": 7,
       "options": {
@@ -350,12 +339,54 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r._field == \"value\") |> keep(columns: [\"_time\", \"metric\", \"result_type\", \"prediction_mode\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"metric\", \"_value\"]) |> pivot(rowKey: [\"_time\"], columnKey: [\"metric\"], valueColumn: \"_value\") |> sort(columns: [\"_time\"], desc: true)",
           "refId": "A"
         }
       ],
-      "title": "Actual and predicted metric history",
+      "title": "Метрики выбранной версии",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"metric_results\" and r.metric == \"memory_mb\" and (r._field == \"full_value\" or r._field == \"compressed_value\" or r._field == \"value\")) |> map(fn: (r) => ({ r with view: if r.result_type == \"predicted\" then \"predicted\" else if r._field == \"full_value\" then \"full\" else \"compared\" })) |> filter(fn: (r) => r.view == \"${model_view}\") |> group() |> keep(columns: [\"_time\", \"_value\"]) |> rename(columns: {_value: \"value\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory выбранной версии",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
@@ -363,7 +394,40 @@
   "style": "dark",
   "tags": ["model-compression", "actual-vs-predicted"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "Сжатая / compared baseline",
+          "value": "compared"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Версия модели",
+        "multi": false,
+        "name": "model_view",
+        "options": [
+          {
+            "selected": true,
+            "text": "Сжатая / compared baseline",
+            "value": "compared"
+          },
+          {
+            "selected": false,
+            "text": "Полная / full",
+            "value": "full"
+          },
+          {
+            "selected": false,
+            "text": "Пользовательская / predicted",
+            "value": "predicted"
+          }
+        ],
+        "query": "compared,full,predicted",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-30d",
