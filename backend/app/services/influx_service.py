@@ -73,7 +73,7 @@ class InfluxService:
         point = point_cls("metric_results")
         for name, tag_value in tags.items():
             point = point.tag(name, tag_value)
-        return point.time(timestamp).field("value", float(value)).field("metric_name", metric)
+        return point.time(timestamp).field(metric, float(value))
 
     def write_actual(self, experiment: Experiment, required: bool = False) -> bool:
         try:
@@ -85,34 +85,42 @@ class InfluxService:
             return False
 
         model_id = experiment.meta.model_id or "demo_model_v1"
-        tags = {
+        points: list[Any] = []
+
+        # Записываем Full модель - одна точка со всеми метриками
+        full_tags = {
             "model_id": model_id,
             "experiment_id": experiment.experiment_id,
             "result_type": "actual",
             "prediction_mode": "black_box",
+            "model_type": "full",
         }
-        points: list[Any] = []
+        full_point = Point("metric_results").time(experiment.meta.timestamp)
+        for name, tag_value in full_tags.items():
+            full_point = full_point.tag(name, tag_value)
+        # Динамически записываем все метрики из experiment.metrics
         for metric in experiment.metrics:
-            point = self._metric_point(
-                Point,
-                metric.param,
-                metric.compressed,
-                experiment.meta.timestamp,
-                {**tags, "metric": metric.param},
-            )
-            point = (
-                point.field("full_value", float(metric.full))
-                .field("compressed_value", float(metric.compressed))
-                .field("absolute_delta", float(metric.compressed - metric.full))
-            )
-            points.append(point)
-        summary = Point("model_results")
-        for name, tag_value in tags.items():
-            summary = summary.tag(name, tag_value)
-        summary = summary.time(experiment.meta.timestamp)
+            if metric.full is not None:
+                full_point = full_point.field(metric.param, float(metric.full))
+        points.append(full_point)
+
+        # Записываем Compressed модель - одна точка со всеми метриками
+        compressed_tags = {
+            "model_id": model_id,
+            "experiment_id": experiment.experiment_id,
+            "result_type": "actual",
+            "prediction_mode": "black_box",
+            "model_type": "compressed",
+        }
+        compressed_point = Point("metric_results").time(experiment.meta.timestamp)
+        for name, tag_value in compressed_tags.items():
+            compressed_point = compressed_point.tag(name, tag_value)
+        # Динамически записываем все метрики из experiment.metrics
         for metric in experiment.metrics:
-            summary = summary.field(metric.param, float(metric.compressed))
-        points.append(summary)
+            if metric.compressed is not None:
+                compressed_point = compressed_point.field(metric.param, float(metric.compressed))
+        points.append(compressed_point)
+
         return self._write(points, required=required)
 
     def write_prediction(
@@ -138,30 +146,14 @@ class InfluxService:
             "experiment_id": "interactive",
             "result_type": "predicted",
             "prediction_mode": prediction_mode,
+            "model_type": "predicted",
             "support_level": str(support["level"]),
         }
-        points: list[Any] = []
-        for metric, value in prediction.items():
-            point = self._metric_point(
-                Point,
-                metric,
-                value,
-                timestamp,
-                {**common_tags, "metric": metric},
-            ).field("support_score", float(support["score"]))
-            points.append(point)
-
-        summary = Point("model_results")
+        point = Point("metric_results").time(timestamp)
         for name, tag_value in common_tags.items():
-            summary = summary.tag(name, tag_value)
-        summary = (
-            summary.time(timestamp)
-            .field("support_score", float(support["score"]))
-            .field("support_distance", float(support["distance"]))
-        )
-        for name, value in configuration.items():
-            summary = summary.field(f"config_{name}", float(value))
-        for name, value in prediction.items():
-            summary = summary.field(name, float(value))
-        points.append(summary)
+            point = point.tag(name, tag_value)
+        for metric, value in prediction.items():
+            point = point.field(metric, float(value))
+        points = [point]
+
         return self._write(points, required=required)
