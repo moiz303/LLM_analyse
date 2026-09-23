@@ -265,7 +265,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"model_type\"])\n  |> group()\n  |> pivot(\n    rowKey: [\"_time\", \"_field\"],\n    columnKey: [\"model_type\"],\n    valueColumn: \"_value\"\n  )\n  |> sort(columns: [\"_time\", \"_field\"], desc: true)",
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"model_type\"])\n  |> group(columns: [\"_time\"])\n  |> pivot(\n    rowKey: [\"_time\", \"_field\"],\n    columnKey: [\"model_type\"],\n    valueColumn: \"_value\"\n  )\n  |> sort(columns: [\"_time\", \"_field\"], desc: true)",
           "refId": "A"
         }
       ],
@@ -275,10 +275,11 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "_time": true
+            },
             "indexByName": {},
             "renameByName": {
-              "_time": "Time",
               "_field": "Metric"
             }
           }
@@ -354,14 +355,12 @@
           "type": "influxdb",
           "uid": "influxdb-model-comparison"
         },
-        "definition": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> rename(columns: {_field: \"_value\"})\n  |> sort(columns: [\"_value\"])",
-        "hide": 0,
+        "definition": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> sort(columns: [\"_value\"])",        "hide": 0,
         "includeAll": false,
         "label": "Metric",
         "multi": false,
         "name": "metric_choice",
-        "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> rename(columns: {_field: \"_value\"})\n  |> sort(columns: [\"_value\"])",
-        "refresh": 1,
+        "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> sort(columns: [\"_value\"])",        "refresh": "On time range change",
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
