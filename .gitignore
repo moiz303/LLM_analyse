@@ -34,5 +34,6 @@ pip-delete-this-directory.txt
 
 # Local runtime data and credentials
 .env
+black_box_experiments.json
 data/model.json
 data/experiments/*.json

@@ -8,6 +8,24 @@
 
 ---
 
+## Оглавление
+
+- [О проекте](#о-проекте)
+- [Архитектура](#архитектура)
+- [Стек](#стек)
+- [Быстрый старт](#быстрый-старт)
+- [Структура проекта](#структура-проекта)
+- [Формат `comparison.json`](#формат-comparisonjson)
+- [API](#api)
+- [InfluxDB и Grafana](#influxdb-и-grafana)
+- [Переменные окружения](#переменные-окружения)
+- [Для разработчиков](#для-разработчиков)
+- [Troubleshooting](#troubleshooting)
+- [Лицензия](#лицензия)
+- [Ссылки](#ссылки)
+
+---
+
 ## О проекте
 
 Проект предназначен для интерактивного сравнения полной ML-модели и её
@@ -76,9 +94,15 @@ Frontend ── POST /api/predict ──> FastAPI ──> InfluxDB
 
 Проект намеренно разделяет три уровня хранения:
 
-- `comparison.json` — неизменяемый источник истины для baseline и Reset;
-- `data/model.json` — текущий buffer параметров пользователя;
-- `data/experiments/` — проверенные snapshots экспериментов и история.
+- `comparison.json` — неизменяемый источник истины для baseline и Reset
+  (единственный файл данных, который хранится в Git);
+- `model.json` — текущий buffer параметров пользователя; создаётся backend
+  внутри контейнера (копируется из `comparison.json`) при первом запросе;
+- `data/experiments/` — snapshots экспериментов; заполняется ingest'ом при
+  запуске контейнера.
+
+Файлы `model.json` и содержимое `data/experiments/` — runtime-данные: они
+исключены из Git и `.dockerignore`, их не нужно создавать вручную.
 
 При загрузке исходных данных используется fallback-цепочка:
 
@@ -138,9 +162,19 @@ Python на хост-системе для обычного запуска не 
    Полный список переменных приведён ниже в разделе
    [Переменные окружения](#переменные-окружения).
 
-   Токен не нужно вручную копировать в
-   `provisioning/datasources/influxdb.yml`: provisioning использует значение
-   `${INFLUXDB_TOKEN}` из окружения (отличие о предыдущей версии). Файл `.env` нельзя добавлять в Git.
+   **Важно:** Grafana-p datasource (`provisioning/datasources/influxdb.yml`)
+   читает токен из поля `secureJsonData.token`, которое сейчас пустое. Без токена
+   Grafana не сможет выполнять запросы к InfluxDB, и dashboard останется пустым.
+   После получения токена скопируйте его в это поле (или замените значение на
+   `${INFLUXDB_TOKEN}`, если ваша версия Grafana поддерживает подстановку env в
+   provisioning) и перезапустите Grafana:
+
+   ```bash
+   docker compose restart grafana
+   ```
+
+   Backend и ingest используют `${INFLUXDB_TOKEN}` из `.env` автоматически — там
+   ручное копирование не нужно. Файл `.env` нельзя добавлять в Git.
 
 3. Убедитесь, что `comparison.json` находится в корне проекта. Это
    канонический baseline текущего demo. Для другого эксперимента замените
@@ -228,8 +262,7 @@ docker compose up -d --build
 │   ├── requirements.txt
 │   └── tests/
 ├── data/
-│   ├── model.json                       # локальный buffer пользователя
-│   └── experiments/                     # snapshots экспериментов
+│   └── experiments/                     # runtime-snapshots (пусто в Git)
 └── provisioning/
     ├── datasources/
     │   └── influxdb.yml                 # datasource Grafana
@@ -238,8 +271,10 @@ docker compose up -d --build
         └── model_comparison.json        # dashboard Grafana
 ```
 
-`data/model.json` и содержимое `data/experiments/` являются runtime-данными и
-не должны использоваться как замена `comparison.json`.
+В репозитории из `data/` хранится только каталог `experiments/` с `.gitkeep`.
+`model.json` и файлы экспериментов — runtime-данные, которые создаются backend
+и ingest внутри Docker-контейнера; вручную их создавать не нужно, и они не
+должны использоваться как замена `comparison.json`.
 
 ---
 
@@ -292,24 +327,24 @@ docker compose up -d --build
 
 ### Основные поля
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `experiment_id` | string | Уникальный идентификатор эксперимента |
-| `meta.full_model` | string | Имя полной модели |
-| `meta.compressed_model` | string | Имя сжатой модели |
-| `meta.timestamp` | ISO 8601 | Время actual-точек в InfluxDB |
-| `meta.model_id` | string | Идентификатор модели для API и dashboard |
-| `configuration` | object | Значения параметров в baseline |
-| `critical_parameters` | object | Диапазоны и sensitivity параметров |
-| `metrics` | array | Значения полной и сжатой модели |
-| `per_class` | array | Необязательные метрики по классам |
+| Поле                    | Тип      | Назначение                               |
+|-------------------------|----------|------------------------------------------|
+| `experiment_id`         | string   | Уникальный идентификатор эксперимента    |
+| `meta.full_model`       | string   | Имя полной модели                        |
+| `meta.compressed_model` | string   | Имя сжатой модели                        |
+| `meta.timestamp`        | ISO 8601 | Время actual-точек в InfluxDB            |
+| `meta.model_id`         | string   | Идентификатор модели для API и dashboard |
+| `configuration`         | object   | Значения параметров в baseline           |
+| `critical_parameters`   | object   | Диапазоны и sensitivity параметров       |
+| `metrics`               | array    | Значения полной и сжатой модели          |
+| `per_class`             | array    | Необязательные метрики по классам        |
 
 Каждый объект в `metrics` содержит:
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `param` | string | Название метрики |
-| `full` | number | Значение полной модели |
+| Поле         | Тип    | Назначение             |
+|--------------|--------|------------------------|
+| `param`      | string | Название метрики       |
+| `full`       | number | Значение полной модели |
 | `compressed` | number | Значение сжатой модели |
 
 Валидация дополнительно проверяет:
@@ -343,13 +378,15 @@ docker compose up -d --build
 Возвращает конфигурацию модели для frontend:
 
 - `model_id`;
-- параметры и их baseline;
-- UI-диапазоны и физически допустимые диапазоны;
-- критичность параметров;
-- sensitivity;
-- список метрик;
-- направление оптимизации;
-- baseline полной и сжатой модели.
+- `parameters` — массив параметров (`name`, `baseline`, `ui_range`,
+  `valid_range`, `critical`, `sensitivity`);
+- `current_configuration` — текущие значения buffer'а;
+- `baseline` (конфигурация и compressed-метрики baseline);
+- `metrics` — массив метрик (`name`, `full`, `compressed`,
+  `absolute_delta`, `relative_delta`, `direction`, `kind`);
+- направление оптимизации (`direction`) и тип метрики (`kind`);
+- `metadata` (имена моделей, `experiment_id`, `timestamp`);
+- `constraints` — описание правил валидации.
 
 Frontend не должен дублировать эти значения в собственном коде.
 
@@ -369,25 +406,32 @@ Frontend не должен дублировать эти значения в с�
 
 Backend:
 
-1. проверяет конфигурацию;
+1. проверяет конфигурацию (все параметры обязательны, неизвестные запрещены,
+   значения вне UI-диапазона отклоняются с `422` и текстовым `detail`);
 2. рассчитывает метрики через sensitivity-predictor;
 3. ограничивает prediction физически допустимыми значениями;
 4. вычисляет support относительно ближайшего известного эксперимента;
-5. обновляет `data/model.json`;
+5. обновляет buffer-файл модели (`model.json`) внутри контейнера;
 6. пишет predicted-точки в InfluxDB.
+
+Ответ содержит поля: `prediction_mode`, `model_id`, `prediction`, `baseline`,
+`configuration`, `support` (`score`, `level`, `nearest_experiment_id`,
+`distance`), `metrics`, `persisted`.
 
 `support` показывает степень экстраполяции и не является вероятностью
 правильности prediction.
 
 ### `POST /api/reset`
 
-Восстанавливает `data/model.json` из исходного `comparison.json` и возвращает
-prediction исходной конфигурации. Для baseline compressed-метрики возвращаются
-точные измеренные значения.
+Восстанавливает buffer-файл модели (`model.json`) из исходного
+`comparison.json` и возвращает prediction исходной конфигурации в том же
+формате, что и `POST /api/predict`. Для baseline compressed-метрики
+возвращаются точные измеренные значения.
 
 ### `GET /api/experiments`
 
-Возвращает список сохранённых snapshots экспериментов.
+Возвращает список сохранённых snapshots экспериментов (пустой, пока в
+контейнер не выполнен ingest или `POST /api/experiments`).
 
 ### `GET /api/experiments/{experiment_id}`
 
@@ -426,21 +470,25 @@ prediction_mode=sensitivity_model
 
 ### Measurements
 
-Backend использует два measurement:
+Backend пишет все точки в один measurement `metric_results`:
 
-| Measurement | Назначение |
-|---|---|
-| `metric_results` | Детальные значения по каждой метрике |
-| `model_results` | Сводные результаты, support и параметры конфигурации |
+| Тег               | Значения                                    | Назначение                              |
+|-------------------|---------------------------------------------|-----------------------------------------|
+| `model_id`        | из `meta.model_id`                          | идентификатор модели                    |
+| `experiment_id`   | id эксперимента / `interactive` для predict | связь с историей                        |
+| `result_type`     | `actual` / `predicted`                      | разделение измеренного и предсказанного |
+| `prediction_mode` | `black_box` / `sensitivity_model`           | источник значения                       |
+| `model_type`      | `full` / `compressed` / `predicted`         | какая модель описана точкой             |
+| `support_level`   | `high` / `medium` / `low`                   | только у predicted-точек                |
 
-Типовые теги:
+Каждая точка содержит поля — по одному на каждую метрику (`accuracy_top1`,
+`latency_ms` и т.д.). Actual-данные пишутся двумя точками (full и compressed)
+со временем из `meta.timestamp`; prediction — одной точкой с текущим временем.
 
-- `model_id`;
-- `experiment_id`;
-- `result_type`;
-- `prediction_mode`;
-- `metric`;
-- `support_level` для prediction.
+> Примечание: два panel-запроса dashboard («Support пользовательской модели» и
+> «История support») обращаются к measurement `model_results` и полю
+> `support_score`, которые backend не записывает — эти panels будут пустыми,
+> пока dashboard или backend не будут приведены к единой схеме.
 
 Grafana и backend подключаются к InfluxDB по внутреннему адресу
 `INFLUXDB_URL`, например `http://influxdb:8086`. Браузер использует
@@ -454,43 +502,43 @@ host-facing порты из `.env`.
 
 ### Порты и внутренние адреса
 
-| Переменная | Назначение | Значение по умолчанию |
-|---|---|---|
-| `BACKEND_PORT` | Порт backend на хосте | `8000` |
-| `INFLUXDB_PORT` | Порт InfluxDB на хосте | `8086` |
-| `GRAFANA_PORT` | Порт Grafana на хосте | `3000` |
-| `BACKEND_HOST` | Адрес прослушивания backend в контейнере | `0.0.0.0` |
-| `BACKEND_CONTAINER_PORT` | Порт backend внутри контейнера | `8000` |
-| `INFLUXDB_URL` | Внутренний URL InfluxDB | `http://influxdb:8086` |
-| `INFLUXDB_CONTAINER_PORT` | Порт InfluxDB внутри сети Docker | `8086` |
-| `GRAFANA_CONTAINER_PORT` | Порт Grafana внутри контейнера | `3000` |
+| Переменная                | Назначение                               | Значение по умолчанию  |
+|---------------------------|------------------------------------------|------------------------|
+| `BACKEND_PORT`            | Порт backend на хосте                    | `8000`                 |
+| `INFLUXDB_PORT`           | Порт InfluxDB на хосте                   | `8086`                 |
+| `GRAFANA_PORT`            | Порт Grafana на хосте                    | `3000`                 |
+| `BACKEND_HOST`            | Адрес прослушивания backend в контейнере | `0.0.0.0`              |
+| `BACKEND_CONTAINER_PORT`  | Порт backend внутри контейнера           | `8000`                 |
+| `INFLUXDB_URL`            | Внутренний URL InfluxDB                  | `http://influxdb:8086` |
+| `INFLUXDB_CONTAINER_PORT` | Порт InfluxDB внутри сети Docker         | `8086`                 |
+| `GRAFANA_CONTAINER_PORT`  | Порт Grafana внутри контейнера           | `3000`                 |
 
 ### Backend
 
-| Переменная | Назначение | Значение по умолчанию |
-|---|---|---|
-| `DATA_DIR` | Каталог runtime-данных | `data` |
-| `COMPARISON_PATH` | Путь к source-of-truth | `comparison.json` |
-| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:5173 |
+| Переменная         | Назначение                   | Значение по умолчанию |
+|--------------------|------------------------------|-----------------------|
+| `DATA_DIR`         | Каталог runtime-данных       | `data`                |
+| `COMPARISON_PATH`  | Путь к source-of-truth       | `comparison.json`     |
+| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:5173        |
 
 ### InfluxDB
 
-| Переменная | Назначение | Значение по умолчанию |
-|---|---|---|
-| `INFLUXDB_USERNAME` | Администратор InfluxDB | `admin` |
-| `INFLUXDB_PASSWORD` | Пароль администратора | `admin` |
-| `INFLUXDB_ORG` | Организация | `mlops` |
-| `INFLUXDB_BUCKET` | Bucket | `model_comparison` |
-| `INFLUXDB_TOKEN` | Токен доступа | задаётся локально |
-| `INFLUXDB_RETENTION` | Retention policy | `365d` |
-| `INFLUXDB_REQUIRED` | Требовать InfluxDB для API-запросов | `false` |
+| Переменная           | Назначение                          | Значение по умолчанию |
+|----------------------|-------------------------------------|-----------------------|
+| `INFLUXDB_USERNAME`  | Администратор InfluxDB              | `admin`               |
+| `INFLUXDB_PASSWORD`  | Пароль администратора               | `admin`               |
+| `INFLUXDB_ORG`       | Организация                         | `mlops`               |
+| `INFLUXDB_BUCKET`    | Bucket                              | `model_comparison`    |
+| `INFLUXDB_TOKEN`     | Токен доступа                       | задаётся локально     |
+| `INFLUXDB_RETENTION` | Retention policy                    | `365d`                |
+| `INFLUXDB_REQUIRED`  | Требовать InfluxDB для API-запросов | `false`               |
 
 ### Grafana
 
-| Переменная | Назначение | Значение по умолчанию |
-|---|---|---|
-| `GRAFANA_ADMIN_USER` | Логин администратора | `admin` |
-| `GRAFANA_ADMIN_PASSWORD` | Пароль администратора | `admin` |
+| Переменная               | Назначение            | Значение по умолчанию |
+|--------------------------|-----------------------|-----------------------|
+| `GRAFANA_ADMIN_USER`     | Логин администратора  | `admin`               |
+| `GRAFANA_ADMIN_PASSWORD` | Пароль администратора | `admin`               |
 
 Значения с паролями и токенами нельзя коммитить в репозиторий.
 
@@ -500,9 +548,22 @@ host-facing порты из `.env`.
 
 ### Запуск тестов
 
+Тесты запускаются из директории `backend` (там лежит `pytest.ini` с
+настроенным `pythonpath`):
+
 ```bash
-pytest -q backend/tests
+cd backend && pytest -q
 ```
+
+Или из корня репозитория, если PYTHONPATH указывает на `backend`:
+
+```bash
+PYTHONPATH=backend pytest -q backend/tests
+```
+
+Требуемая версия pytest зафиксирована в `backend/requirements.txt`
+(`pytest==8.3.5`). С более новыми версиями pytest (9+) запуск падает еще до
+выполнения тестов: `Failed: Marks cannot be applied to fixtures`.
 
 Тесты проверяют:
 
@@ -522,19 +583,19 @@ pytest -q backend/tests
 
 ```bash
 docker compose exec backend \
-  python backend/ingest.py comparison.json
-```
-
-Скрипт также поддерживает переопределение параметров подключения:
-
-```bash
-docker compose exec backend \
   python /app/backend/ingest.py /app/comparison.json \
   --url http://influxdb:8086 \
   --org mlops \
   --bucket model_comparison \
   --token '<токен>'
 ```
+
+Аргументы `--url/--org/--bucket/--token` переопределяют параметры подключения;
+без них используются значения из окружения контейнера (`.env`).
+
+Внимание: ingest всегда записывает snapshot эксперимента в директорию
+`EXPERIMENTS_DIR` (в контейнере это примонтированный хостовый каталог
+`data/experiments/`) и требует настроенного InfluxDB (`required=True`).
 
 ### Изменение dashboard
 
@@ -565,16 +626,16 @@ docker compose up -d
 
 ## Troubleshooting
 
-| Симптом | Возможная причина | Что проверить |
-|---|---|---|
-| В InfluxDB нет данных после запуска | Не стартовал automatic ingest | `docker compose logs backend` |
-| Backend не запускается | InfluxDB ещё не healthy или неверный токен | `docker compose ps`, `docker compose logs influxdb backend` |
-| `unauthorized` | Токен в существующем InfluxDB volume не совпадает с `.env` | Проверьте token или пересоздайте volume |
-| Ошибка `422` при ingest | Timestamp из будущего или вне retention | Проверьте `meta.timestamp` и `INFLUXDB_RETENTION` |
-| Grafana открывается, но dashboard пуст | Неверный временной диапазон | Выберите диапазон, покрывающий timestamp точек |
-| InfluxDB UI показывает пусто | Открыты не данные bucket, а другая секция интерфейса | Используйте Data Explorer |
-| Grafana не показывает dashboard | Ошибка JSON или provisioning | `docker compose logs grafana` и проверка JSON |
-| Grafana игнорирует новый пароль | Grafana уже инициализирована старым volume | Пересоздайте `grafana_data` |
+| Симптом                                | Возможная причина                                          | Что проверить                                               |
+|----------------------------------------|------------------------------------------------------------|-------------------------------------------------------------|
+| В InfluxDB нет данных после запуска    | Не стартовал automatic ingest                              | `docker compose logs backend`                               |
+| Backend не запускается                 | InfluxDB ещё не healthy или неверный токен                 | `docker compose ps`, `docker compose logs influxdb backend` |
+| `unauthorized`                         | Токен в существующем InfluxDB volume не совпадает с `.env` | Проверьте token или пересоздайте volume                     |
+| Ошибка `422` при ingest                | Timestamp из будущего или вне retention                    | Проверьте `meta.timestamp` и `INFLUXDB_RETENTION`           |
+| Grafana открывается, но dashboard пуст | Неверный временной диапазон                                | Выберите диапазон, покрывающий timestamp точек              |
+| InfluxDB UI показывает пусто           | Открыты не данные bucket, а другая секция интерфейса       | Используйте Data Explorer                                   |
+| Grafana не показывает dashboard        | Ошибка JSON или provisioning                               | `docker compose logs grafana` и проверка JSON               |
+| Grafana игнорирует новый пароль        | Grafana уже инициализирована старым volume                 | Пересоздайте `grafana_data`                                 |
 
 Если credentials изменились после первого запуска, помните: InfluxDB и Grafana
 сохраняют первоначальную инициализацию в Docker volumes. Для полного сброса

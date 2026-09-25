@@ -256,13 +256,18 @@ Backend должен четко разделять три типа данных:
    - Файл `model.json` является БУФЕРОМ ОБМЕНА.
    - При старте копирует данные из `comparison.json`.
    - Сюда сохраняются ЛЮБЫЕ изменения, внесенные пользователем через UI.
-   - Именно этот файл читается `GET /api/model` для отображения текущего состояния sliders.
-   - Перезаписывается при каждом успешном `GET /api/model`.
+   - Именно этот файл читается `GET /api/model` для отображения текущего состояния sliders
+     (в ответе это поле `current_configuration`).
+   - Перезаписывается при каждом успешном `POST /api/predict` (backend сохраняет
+     туда последнюю предсказанную конфигурацию). При первом обращении, если файла
+     нет, он создаётся копией `comparison.json`.
 
 3. Experiment History (`experiments/`):
    - Папка `experiments/` хранит ПРОГОНЫ (snapshots).
    - Каждый файл `exp_XXX.json` — это зафиксированная конфигурация + результат prediction.
-   - Используется для построения Sensitivity Predictor и отображения истории.
+   - Используется для расчёта prediction support (близость текущей конфигурации
+     к известным экспериментам) и отображения истории. Сам sensitivity-предиктор
+     строится по `comparison.json` (Source of Truth), а не по snapshots.
    - Не влияет на текущее состояние sliders напрямую.
 ---
 
@@ -1170,9 +1175,9 @@ FastAPI должен предоставлять OpenAPI/Swagger.
 Минимальные endpoint'ы:
 
 ```http
-GET /api/model -> Читает data/model.json (User Buffer)
+GET /api/model -> Возвращает конфигурацию из comparison.json + current_configuration из data/model.json (User Buffer)
 POST /api/predict -> Считает + пишет в data/model.json + InfluxDB
-POST /api/reset -> Читает comparison.json -> пишет в model.json -> возвращает baseline
+POST /api/reset -> Читает comparison.json -> пишет в model.json -> возвращает baseline (в формате PredictionResponse)
 GET /health -> heathcheck
 ```
 
