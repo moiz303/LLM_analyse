@@ -217,12 +217,21 @@ Python на хост-системе для обычного запуска не 
 - InfluxDB: <http://localhost:8086>
 - Grafana: <http://localhost:3000>
 - Dashboard: <http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk>
+- Frontend (Next.js): <http://localhost:3100>
 
 Frontend может использовать:
 
 ```env
-VITE_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
+NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
 ```
+
+> Переменные `NEXT_PUBLIC_*` вшиваются в клиентский бандл **на этапе сборки
+> образа** (build arg в `docker-compose.yml`), поэтому при их изменении нужно
+> пересобрать образ: `docker compose build frontend`. Адрес backend для
+> браузера задаётся переменной `NEXT_PUBLIC_API_URL`
+> (по умолчанию `http://localhost:8000`). В `FRONTEND_ORIGINS` backend должен
+> содержать адрес фронта (например, `http://localhost:3100`) — иначе браузер
+> заблокирует запросы CORS.
 
 Логин Grafana берётся из `GRAFANA_ADMIN_USER` и
 `GRAFANA_ADMIN_PASSWORD`.
@@ -250,7 +259,7 @@ docker compose up -d --build
 ├── .env.example                         # шаблон переменных окружения
 ├── .gitignore
 ├── Dockerfile                           # образ FastAPI backend
-├── docker-compose.yml                   # backend + InfluxDB + Grafana
+├── docker-compose.yml                   # backend + InfluxDB + Grafana + frontend
 ├── comparison.json                      # канонический baseline
 ├── backend/
 │   ├── app/

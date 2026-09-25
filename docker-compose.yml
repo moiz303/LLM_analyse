@@ -56,6 +56,23 @@ services:
     networks:
       - model-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${BACKEND_PORT:-8000}}
+        NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: ${NEXT_PUBLIC_GRAFANA_DASHBOARD_URL:-}
+    ports:
+      - "${FRONTEND_PORT:-3100}:${FRONTEND_CONTAINER_PORT:-3000}"
+    environment:
+      PORT: ${FRONTEND_CONTAINER_PORT:-3000}
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      - backend
+    networks:
+      - model-network
+
   grafana:
     image: grafana/grafana:11.1.0
     ports:

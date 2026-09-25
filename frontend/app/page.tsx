@@ -20,8 +20,13 @@ import {
   Zap,
 } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || ''
+// The backend is the JSON source of truth: comparison.json is exposed through
+// /api/model, while data/model.json is represented by current_configuration.
+// Grafana is intentionally used only as the visualization layer.
+// Use the same-origin proxy by default. This keeps browser requests working in
+// Docker, where localhost points at the browser container rather than the API.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_URL || '/backend'
+const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || process.env.VITE_GRAFANA_DASHBOARD_URL || ''
 
 type Parameter = { name: string; baseline: number; ui_range: { min: number; max: number }; critical?: boolean; sensitivity?: Record<string, number | { lower?: number; upper?: number; power_lower?: number; power_upper?: number }> }
 type Metric = { name: string; full: number; compressed: number; absolute_delta: number; relative_delta: number; direction: 'higher_is_better' | 'lower_is_better'; kind?: string }
