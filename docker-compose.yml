@@ -61,13 +61,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${BACKEND_PORT:-8000}}
-        NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: ${NEXT_PUBLIC_GRAFANA_DASHBOARD_URL:-}
-    ports:
-      - "${FRONTEND_PORT:-3100}:${FRONTEND_CONTAINER_PORT:-3000}"
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: ${NEXT_PUBLIC_GRAFANA_DASHBOARD_URL:-http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk}
     environment:
-      PORT: ${FRONTEND_CONTAINER_PORT:-3000}
+      PORT: ${FRONTEND_CONTAINER_PORT:-3100}
       HOSTNAME: 0.0.0.0
+      # Целевой адрес backend для серверного прокси /backend внутри сети compose.
+      BACKEND_URL: ${FRONTEND_BACKEND_URL:-http://backend:${BACKEND_CONTAINER_PORT:-8000}}
+    ports:
+      - "${FRONTEND_PORT:-3100}:${FRONTEND_CONTAINER_PORT:-3100}"
     depends_on:
       - backend
     networks:
