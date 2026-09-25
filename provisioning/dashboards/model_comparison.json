@@ -1,295 +1,381 @@
 {
-  "uid": "model-cmp",
-  "title": "Full vs Compressed Model",
-  "tags": ["ml", "comparison"],
-  "timezone": "browser",
-  "schemaVersion": 39,
-  "version": 1,
-  "refresh": "30s",
-  "time": {"from": "now-90d", "to": "now"},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
   "panels": [
     {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 4,
+          "unit": "none",
+          "displayName": "${__field.labels.model_type}"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
       "id": 1,
-      "type": "table",
-      "title": "Метрики: полная vs сжатая, % (относ.)",
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
-      "datasource": {"type": "influxdb", "uid": ""},
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
       "targets": [
         {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> filter(fn: (r) => r._field == \"accuracy_top1\")\n  |> group(columns: [\"model_type\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
+          "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [{"displayName": "delta", "desc": false}]
+      "title": "Accuracy (все модели)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {"align": "center"},
-          "unit": "short"
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 4,
+          "unit": "none",
+          "displayName": "${__field.labels.model_type}"
         },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "delta"},
-            "properties": [
-              {"id": "custom.displayMode", "value": "color-background"},
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {"color": "red", "value": null},
-                    {"color": "yellow", "value": -0.01},
-                    {"color": "green", "value": 0}
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 18,
+        "x": 6,
+        "y": 0
+      },
       "id": 2,
-      "type": "barchart",
-      "title": "Метрики: полная vs сжатая",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
-      "datasource": {"type": "influxdb", "uid": ""},
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
       "targets": [
         {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with full: 100.0, compressed: r.compressed / r.full * 100.0}))\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> filter(fn: (r) => r._field == \"accuracy_top1\")\n  |> group(columns: [\"model_type\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
+          "refId": "A"
         }
       ],
-      "options": {
-        "orientation": "horizontal",
-        "showValue": "never",
-        "stacking": "none",
-        "groupWidth": 0.7,
-        "barWidth": 0.8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "palette-classic"},
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
-            "lineWidth": 1,
-            "scaleDistribution": {"type": "linear"},
-            "thresholdsStyle": {"mode": "off"}
-          },
-          "mappings": [],
-          "unit": "percent"
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "full"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-              {"id": "displayName", "value": "Полная модель"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "compressed"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-              {"id": "displayName", "value": "Сжатая модель"}
-            ]
-          }
-        ]
-        }
+      "title": "Accuracy History (все модели)",
+      "type": "timeseries"
     },
     {
-      "id": 3,
-      "type": "table",
-      "title": "Отклонения сжатой модели от полной",
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"delta_pct\" or r._field == \"delta\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> sort(columns: [\"delta_pct\"], desc: false)\n  |> group()"
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [{"displayName": "delta", "desc": false}]
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {"align": "center"},
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "delta"},
-            "properties": [
-              {"id": "custom.displayMode", "value": "color-background"},
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {"color": "red", "value": null},
-                    {"color": "yellow", "value": -0.01},
-                    {"color": "green", "value": 0}
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 4,
-      "type": "barchart",
-      "title": "Δ% отклонение сжатой модели",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
-      "datasource": {"type": "influxdb", "uid": ""},
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"model_metric\")\n  |> filter(fn: (r) => r._field == \"delta_pct\")\n  |> last()\n  |> pivot(rowKey: [\"param\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
-        }
-      ],
-      "options": {
-        "orientation": "horizontal",
-        "showValue": "never",
-        "barWidth": 0.6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "custom": {
-            "scaleDistribution": {
-              "type": "symlog",
-              "log": 10
-            }
+          "color": {
+            "mode": "thresholds"
           },
+          "decimals": 2,
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "orange", "value": null},
-              {"color": "blue", "value": -1},
-              {"color": "red", "value": -5}
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.8
+              }
             ]
-          }
+          },
+          "unit": "none"
         },
-        "overrides":[
-          {
-            "matcher": {"id": "byName", "options": "delta_pct"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-              {"id": "displayName", "value": "Разница, %"}
-            ]
-          }
-        ]
-      }
-    },
-    {
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
       "id": 5,
-      "type": "table",
-      "title": "Per-class: где просела сжатая модель",
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 18},
-      "datasource": {"type": "influxdb", "uid": ""},
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
       "targets": [
         {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"per_class_metric\")\n  |> last()\n  |> pivot(rowKey: [\"class\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"class\", \"full\", \"compressed\", \"delta\"])\n  |> sort(columns: [\"delta\"], desc: false)\n  |> group()"
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
+          "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [{"displayName": "delta", "desc": false}]
+      "title": "Support пользовательской модели",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
       },
       "fieldConfig": {
         "defaults": {
-          "custom": {"align": "center"},
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "delta"},
-            "properties": [
-              {"id": "custom.displayMode", "value": "color-background"},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 6
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"model_results\" and r.result_type == \"predicted\" and r._field == \"support_score\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
+          "refId": "A"
+        }
+      ],
+      "title": "История support пользовательской модели",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {"color": "red", "value": null},
-                    {"color": "yellow", "value": -0.01},
-                    {"color": "green", "value": 0}
-                  ]
-                }
+                "color": "green",
+                "value": null
               }
             ]
           }
-        ]
-      }
-    },
-    {
-      "id": 6,
-      "type": "barchart",
-      "title": "Per-class: сравнение полной и сжатой моделей, % (абсол.)",
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 18},
-      "datasource": {"type": "influxdb", "uid": ""},
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "recalculateCalculations": true,
+          "show": false
+        },
+        "showHeader": true
+      },
       "targets": [
         {
-          "refId": "A",
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -90d)\n  |> filter(fn: (r) => r._measurement == \"per_class_metric\")\n  |> filter(fn: (r) => r._field == \"full\" or r._field == \"compressed\")\n  |> last()\n  |> pivot(rowKey: [\"class\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> drop(columns: [\"_start\", \"_stop\", \"_time\", \"_measurement\", \"full_model\", \"compressed_model\"])\n  |> group()"
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\", \"_value\", \"model_type\"])\n  |> group(columns: [\"_time\"])\n  |> pivot(\n    rowKey: [\"_field\"],\n    columnKey: [\"model_type\"],\n    valueColumn: \"_value\"\n  )\n  |> sort(columns: [\"_time\", \"_field\"], desc: true)",
+          "refId": "A"
         }
       ],
-      "options": {
-        "orientation": "horizontal",
-        "showValue": "never",
-        "groupWidth": 0.7,
-        "barWidth": 0.8
+      "title": "Метрики всех моделей",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "_field": "metric"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-model-comparison"
       },
       "fieldConfig": {
         "defaults": {
-          "color": {"mode": "palette-classic"},
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 5,
+          "unit": "none",
+          "displayName": "${__field.labels.model_type}",
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
-            "lineWidth": 1,
-            "scaleDistribution": {"type": "linear"},
-            "thresholdsStyle": {"mode": "off"}
-          },
-          "mappings": [],
-          "min": 0,
-          "max": 1,
-          "unit": "percentunit"
-        },
-        "overrides": [
-          {
-            "matcher": {"id": "byName", "options": "full"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-              {"id": "displayName", "value": "Полная модель"}
-            ]
-          },
-          {
-            "matcher": {"id": "byName", "options": "compressed"},
-            "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
-              {"id": "displayName", "value": "Сжатая модель"}
-            ]
+            "axisLabel": ""
           }
-        ]
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
         }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> filter(fn: (r) => r._field == \"${metric_choice}\")\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"model_type\"])\n  |> group(columns: [\"model_type\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
+          "refId": "A"
+        }
+      ],
+      "title": "${metric_choice} (все модели)",
+      "type": "timeseries"
     }
-  ]
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "model-compression",
+    "actual-vs-predicted"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "accuracy_top1",
+          "value": "accuracy_top1"
+        },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-model-comparison"
+        },
+        "definition": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> sort(columns: [\"_value\"])",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Metric",
+        "multi": false,
+        "name": "metric_choice",
+        "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type != \"predicted\")\n  |> keep(columns: [\"_field\"])\n  |> group()\n  |> distinct(column: \"_field\")\n  |> sort(columns: [\"_value\"])",
+        "refresh": "On time range change",
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Model Comparison",
+  "uid": "model-comparison",
+  "version": 1
 }

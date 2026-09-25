@@ -1,0 +1,8 @@
+.git
+.cache
+.local
+__pycache__
+*.pyc
+backend/.pytest_cache
+data/model.json
+data/experiments/*.json

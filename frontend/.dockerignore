@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.vercel
+.v0-trash
+.snowflake
+Dockerfile
+*.log
+.env*.local
