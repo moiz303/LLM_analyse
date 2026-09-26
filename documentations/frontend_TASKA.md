@@ -915,25 +915,25 @@ Grafana iframe должен адаптироваться к ширине кон�
 
 Frontend MVP считается готовым, если:
 
-* [ ] приложение запускается;
-* [ ] frontend получает `/api/model` (парсит `parameters`/`metrics` как массивы);
-* [ ] параметры строятся динамически;
-* [ ] sliders работают;
-* [ ] baseline отображается;
-* [ ] delta отображается;
-* [ ] Reset to baseline работает через `POST /api/reset` и возвращает sliders в baseline;
+* [x] приложение запускается;
+* [x] frontend получает `/api/model` (парсит `parameters`/`metrics` как массивы);
+* [x] параметры строятся динамически;
+* [x] sliders работают;
+* [x] baseline отображается;
+* [x] delta отображается;
+* [x] Reset to baseline работает через `POST /api/reset` и возвращает sliders в baseline;
 * [ ] изменения параметров отправляются через `/api/predict` полным набором параметров;
-* [ ] используется debounce;
-* [ ] prediction отображается;
-* [ ] baseline отображается;
-* [ ] support отображается;
-* [ ] low support сопровождается warning;
-* [ ] actual/predicted явно различаются;
-* [ ] история экспериментов получена из `GET /api/experiments` и позволяет восстановить конфигурацию по клику;
-* [ ] Grafana Dashboard встроен через iframe;
-* [ ] Grafana URL берётся из environment;
-* [ ] frontend не работает напрямую с InfluxDB;
-* [ ] frontend не использует Grafana API;
-* [ ] frontend не хранит Grafana/InfluxDB credentials;
+* [x] используется debounce;
+* [x] prediction отображается;
+* [x] baseline отображается;
+* [x] support отображается;
+* [x] low support сопровождается warning;
+* [x] actual/predicted явно различаются;
+* [x] история экспериментов получена из `GET /api/experiments` и позволяет восстановить конфигурацию по клику;
+* [x] Grafana Dashboard встроен через iframe;
+* [x] Grafana URL берётся из environment;
+* [x] frontend не работает напрямую с InfluxDB;
+* [x] frontend не использует Grafana API;
+* [x] frontend не хранит Grafana/InfluxDB credentials;
 * [ ] loading/error states реализованы;
 * [ ] интерфейс работает на 1920x1080 и 1366x768.
