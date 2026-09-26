@@ -67,11 +67,11 @@ export default function Page() {
       const [healthResponse, modelResponse, experimentsResponse] = await Promise.all([
         fetch(`${API_URL}/health`), fetch(`${API_URL}/api/model`), fetch(`${API_URL}/api/experiments`),
       ])
-      if (!healthResponse.ok || !modelResponse.ok) throw new Error('Backend is unavailable')
+      if (!healthResponse.ok || !modelResponse.ok) throw new Error('Сервер недоступен')
       const nextModel = await modelResponse.json() as Model
       setModel(nextModel); setConfig(nextModel.current_configuration); setHealth('online')
       if (experimentsResponse.ok) setExperiments(await experimentsResponse.json())
-    } catch (err) { setHealth('offline'); setError(err instanceof Error ? err.message : 'Unable to connect to backend') }
+    } catch (err) { setHealth('offline'); setError(err instanceof Error ? err.message : 'Сейчас сервер отключен') }
     finally { setLoading(false) }
   }, [])
 
@@ -82,9 +82,9 @@ export default function Page() {
     try {
       const response = await fetch(`${API_URL}/api/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parameters: nextConfig }) })
       const body = await response.json()
-      if (!response.ok) throw new Error(body.detail || 'Prediction failed')
+      if (!response.ok) throw new Error(body.detail || 'Не удалось получить прогноз')
       if (id === requestId.current) setPrediction(body)
-    } catch (err) { if (id === requestId.current) setError(err instanceof Error ? err.message : 'Prediction failed') }
+    } catch (err) { if (id === requestId.current) setError(err instanceof Error ? err.message : 'Не удалось получить прогноз') }
     finally { if (id === requestId.current) setCalculating(false) }
   }, [])
 
@@ -102,9 +102,9 @@ export default function Page() {
     try {
       const response = await fetch(`${API_URL}/api/reset`, { method: 'POST' })
       const body = await response.json()
-      if (!response.ok) throw new Error(body.detail || 'Reset failed')
+      if (!response.ok) throw new Error(body.detail || 'Не удалось сбросить значения')
       setConfig(body.configuration); setPrediction(body)
-    } catch (err) { setError(err instanceof Error ? err.message : 'Reset failed') }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Не удалось сбросить значения') }
     finally { setCalculating(false) }
   }
 
@@ -114,40 +114,40 @@ export default function Page() {
     void predict({ ...experiment.configuration })
   }
 
-  if (loading) return <main className="loading-screen"><div className="loader-mark"><Activity /></div><p>Connecting to compression lab…</p></main>
+  if (loading) return <main className="loading-screen"><div className="loader-mark"><Activity /></div><p>Подключение к лаборатории сжатия…</p></main>
 
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand"><div className="brand-mark"><Sparkles /></div><div><p className="eyebrow">Model Lab / Interactive research</p><h1>Compression <span>Workbench</span></h1></div></div>
-        <div className="top-actions"><div className={`system-status ${health}`}><span /> System {health === 'online' ? 'operational' : health === 'loading' ? 'checking' : 'offline'}</div><button className="reset-button" onClick={reset} disabled={calculating}><RotateCcw /> Reset to baseline</button></div>
+        <div className="brand"><div className="brand-mark"><Sparkles /></div><div><p className="eyebrow">Лаборатория моделей / Интерактивное исследование</p><h1>Workbench <span>сжатия</span></h1></div></div>
+        <div className="top-actions"><div className={`system-status ${health}`}><span /> Система {health === 'online' ? 'в норме' : health === 'loading' ? 'проверяется' : 'офлайн'}</div><button className="reset-button" onClick={reset} disabled={calculating}><RotateCcw /> Сбросить к базовым значениям</button></div>
       </header>
-      {error && <div className="error-banner"><AlertTriangle /> <span>{error}</span><button onClick={() => setError('')}>Dismiss</button></div>}
+      {error && <div className="error-banner"><AlertTriangle /> <span>{error}</span><button onClick={() => setError('')}>Скрыть</button></div>}
       <div className="content-grid">
         <aside className="sidebar panel">
-          <div className="section-heading"><div><p className="eyebrow">Configuration</p><h2>Model parameters</h2></div><SlidersHorizontal /></div>
-          <p className="muted intro">Tune the compression profile and observe the surrogate prediction in real time.</p>
+          <div className="section-heading"><div><p className="eyebrow">Конфигурация</p><h2>Параметры модели</h2></div><SlidersHorizontal /></div>
+          <p className="muted intro">Настройте профиль сжатия и наблюдайте прогноз суррогатной модели в реальном времени.</p>
           <div className="parameter-list">
             {model?.parameters.map((parameter) => { const value = config[parameter.name] ?? parameter.baseline; const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => setSelectedParam(parameter.name)}>
-              <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">critical</span>}</div><strong>{value.toFixed(2)}</strong></div>
+              <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">критический</span>}</div><strong>{value.toFixed(2)}</strong></div>
               <input aria-label={parameter.name} type="range" min={parameter.ui_range.min} max={parameter.ui_range.max} step="0.01" value={value} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
               <div className="range-labels"><span>min {parameter.ui_range.min}</span><span>max {parameter.ui_range.max}</span></div>
               <div className="parameter-details"><span>Baseline <strong>{parameter.baseline.toFixed(2)}</strong></span><span>Current <strong>{value.toFixed(2)}</strong></span><span className={deltaClass(delta)}>Delta <strong>{delta === 0 ? '0.00' : `${delta > 0 ? '+' : ''}${delta.toFixed(2)}`}</strong></span></div>
             </div> })}
           </div>
-          <div className="sensitivity-box"><div className="box-title"><Target /> Sensitivity ranking</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => setSelectedParam(parameter.name)}><span className="rank">0{index + 1}</span><span>{parameter.name}</span><span className="sensitivity-score">{parameter.score.toFixed(3)} <ChevronRight /></span></button>)}</div>
+          <div className="sensitivity-box"><div className="box-title"><Target /> Рейтинг чувствительности</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => setSelectedParam(parameter.name)}><span className="rank">0{index + 1}</span><span>{parameter.name}</span><span className="sensitivity-score">{parameter.score.toFixed(3)} <ChevronRight /></span></button>)}</div>
         </aside>
         <section className="main-column">
-          <div className="hero-row"><div><p className="eyebrow">{model?.model_id || 'Model'} / live analysis</p><h2>Performance <span>at a glance</span></h2></div><div className="calc-state">{calculating ? <><Loader2 className="spin" /> Calculating</> : health === 'online' && prediction ? <><Check /> Synced with backend</> : <><AlertTriangle /> Waiting for backend</>}</div></div>
-          <div className="metric-grid">{model?.metrics.map((metric) => { const predicted = prediction?.prediction[metric.name]; const base = prediction?.baseline[metric.name] ?? model.baseline.metrics[metric.name]; const delta = predicted !== undefined && base !== undefined ? predicted - base : undefined; const tone = metricTone(metric, predicted, base); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">Predicted</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${Math.min(100, Math.max(8, base ? (predicted || 0) / base * 100 : 8))}%` }} /></div></article> })}</div>
-          <div className="compare-card panel"><div className="card-heading"><div><p className="eyebrow">Reference comparison</p><h3>Original <span>vs</span> compressed</h3></div><div className="legend"><span className="legend-dot actual" /> Actual baseline <span className="legend-dot predicted" /> Predicted</div></div><div className="comparison-table">{model?.metrics.map((metric) => <div className="comparison-row" key={metric.name}><span className="comparison-name">{prettyName(metric.name)}</span><div className="comparison-line"><span className="line-fill" style={{ width: `${Math.min(100, Math.max(12, Math.abs(metric.compressed / (metric.full || 1)) * 100))}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(metric.compressed, metric.name)}</span><span className="full-value">{formatValue(metric.full, metric.name)} full</span></div>)}</div></div>
-          <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><p className="eyebrow">Saved runs</p><h3>Experiment history</h3></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${selectedExperiment?.experiment_id === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Timestamp unavailable'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}<small>compressed</small></div><ChevronRight /></button>) : <div className="empty-state"><History /> No saved experiments yet</div>}{selectedExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity /> Actual metrics of {selectedExperiment.experiment_id} (measured run)</div><div className="actual-reference-grid">{Object.entries(selectedExperiment.metrics).map(([name, value]) => { const predicted = prediction?.prediction[name]; return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong><span className="predicted-ref">pred {formatValue(predicted, name)}</span></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><p className="eyebrow">Surrogate model</p><h3>Prediction support</h3></div><Gauge /></div><div className={`support-level ${(prediction?.support?.level || 'unknown').toLowerCase()}`}>{prediction?.support?.level || 'pending'}</div>{prediction?.support?.level?.toLowerCase() === 'low' && <div className="support-warning"><AlertTriangle /> Low support: treat this prediction as an estimate outside the strongest experiment coverage.</div>}<p className="muted">How well the current configuration is covered by existing experiments.</p><div className="support-meta"><span>Nearest run</span><strong>{prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Distance</span><strong>{prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
+          <div className="hero-row"><div><p className="eyebrow">{model?.model_id || 'Модель'} / Анализ в реальном времени</p><h2>Оценка качества модели <span>одним взглядом</span></h2></div><div className="calc-state">{calculating ? <><Loader2 className="spin" /> Расчёт</> : health === 'online' && prediction ? <><Check /> Синхронизировано с backend</> : <><AlertTriangle /> Ожидание backend</>}</div></div>
+          <div className="metric-grid">{model?.metrics.map((metric) => { const predicted = prediction?.prediction[metric.name]; const base = prediction?.baseline[metric.name] ?? model.baseline.metrics[metric.name]; const delta = predicted !== undefined && base !== undefined ? predicted - base : undefined; const tone = metricTone(metric, predicted, base); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">Прогноз</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${Math.min(100, Math.max(8, base ? (predicted || 0) / base * 100 : 8))}%` }} /></div></article> })}</div>
+          <div className="compare-card panel"><div className="card-heading"><div><p className="eyebrow">Сравнение с исходной моделью</p><h3>Оригинал <span>vs</span> сжатая</h3></div><div className="legend"><span className="legend-dot actual" /> Сжатая версия <span className="legend-dot predicted" /> Прогноз</div></div><div className="comparison-table">{model?.metrics.map((metric) => <div className="comparison-row" key={metric.name}><span className="comparison-name">{prettyName(metric.name)}</span><div className="comparison-line"><span className="line-fill" style={{ width: `${Math.min(100, Math.max(12, Math.abs(metric.compressed / (metric.full || 1)) * 100))}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(metric.compressed, metric.name)}</span><span className="full-value">{formatValue(metric.full, metric.name)} full</span></div>)}</div></div>
+          <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><p className="eyebrow">Сохранённые запуски</p><h3>История экспериментов</h3></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${selectedExperiment?.experiment_id === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Метка времени недоступна'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}<small>compressed</small></div><ChevronRight /></button>) : <div className="empty-state"><History /> Сохранённых экспериментов пока нет</div>}{selectedExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity /> Фактические метрики {selectedExperiment.experiment_id} (измеренный запуск)</div><div className="actual-reference-grid">{Object.entries(selectedExperiment.metrics).map(([name, value]) => { const predicted = prediction?.prediction[name]; return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong><span className="predicted-ref">pred {formatValue(predicted, name)}</span></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><p className="eyebrow">Суррогатная модель</p><h3>Точность прогноза</h3></div><Gauge /></div><div className={`support-level ${(prediction?.support?.level || 'unknown').toLowerCase()}`}>{prediction?.support?.level || 'pending'}</div>{prediction?.support?.level?.toLowerCase() === 'low' && <div className="support-warning"><AlertTriangle /> Низкая поддержка: относитесь к этому прогнозу как к оценке за пределами надёжного покрытия экспериментами.</div>}<p className="muted">Уровень поддержки текущей конфигурации существующими экспериментами</p><div className="support-meta"><span>Ближайший эксперимент</span><strong>{prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Разница</span><strong>{prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
           {/* Секция Grafana: iframe вынесен в отдельный компонент (см.
               components/GrafanaDashboard), URL — только из environment. */}
-          <section className="grafana-section panel"><div className="card-heading"><div><p className="eyebrow">Observability</p><h3>Actual vs predicted <span>over time</span></h3></div><div className="grafana-label"><Activity /> Grafana live</div></div><GrafanaDashboard url={GRAFANA_URL} /></section>
+          <section className="grafana-section panel"><div className="card-heading"><div><p className="eyebrow">Наглядно</p><h3>Полная и сжатая модели </h3></div><div className="grafana-label"><Activity /> Grafana live</div></div><GrafanaDashboard url={GRAFANA_URL} /></section>
         </section>
       </div>
-      <footer><span><Clock3 /> Backend predictions persist automatically</span><span>API · {API_URL.replace(/^https?:\/\//, '')}</span></footer>
+      <footer><span><Clock3 /> Прогнозы backend сохраняются автоматически</span><span>API · {API_URL.replace(/^https?:\/\//, '')}</span></footer>
     </main>
   )
 }

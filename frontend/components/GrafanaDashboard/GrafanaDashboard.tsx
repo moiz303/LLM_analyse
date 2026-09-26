@@ -21,7 +21,7 @@ export default function GrafanaDashboard({ url }: Props) {
     return (
       <div className="grafana-placeholder">
         <span>
-          Set <code>NEXT_PUBLIC_GRAFANA_DASHBOARD_URL</code> to connect the dashboard.
+          Задайте <code>NEXT_PUBLIC_GRAFANA_DASHBOARD_URL</code>, чтобы подключить дашборд.
         </span>
       </div>
     )
