@@ -7,6 +7,7 @@ from typing import Any
 
 from ..config import Settings
 from ..models.experiment import Experiment, normalize_experiment_payload
+from .preprocess_service import preprocess_raw_payload
 
 
 class ExperimentStore:
@@ -39,6 +40,7 @@ class ExperimentStore:
 
     def _load_experiment_file(self, path: Path) -> tuple[Experiment, dict[str, Any]]:
         raw = self._read_json(path)
+        raw = preprocess_raw_payload(raw)
         source_payload = raw
         # After an interactive prediction, model.json is a user buffer rather
         # than a complete experiment. Keep a canonical source snapshot in that

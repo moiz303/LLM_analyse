@@ -9,6 +9,7 @@ from app.config import Settings
 from app.models.experiment import Experiment, normalize_experiment_payload
 from app.services.experiment_store import ExperimentStore
 from app.services.influx_service import InfluxService
+from app.services.preprocess_service import preprocess_raw_payload
 
 
 def main() -> int:
@@ -24,6 +25,7 @@ def main() -> int:
 
     with args.path.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
+    raw = preprocess_raw_payload(raw)
     experiment = Experiment.model_validate(
         normalize_experiment_payload(raw, args.path.stem)
     )
