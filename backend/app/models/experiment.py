@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from math import isfinite
+import math
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -44,14 +44,18 @@ class MetricResult(BaseModel):
     @field_validator("full", "compressed")
     @classmethod
     def finite_value(cls, value: float) -> float:
-        if not isfinite(value):
-            raise ValueError("metric values must be finite numbers")
+        if math.isnan(value):
+            return value
+        if math.isinf(value):
+            raise ValueError("metric values must be finite numbers or null")
         return value
 
     @model_validator(mode="after")
     def validate_metric_range(self) -> "MetricResult":
         kind = metric_kind(self.param)
-        values = (self.full, self.compressed)
+        values = tuple(
+            value for value in (self.full, self.compressed) if not math.isnan(value)
+        )
         if kind == "quality" and any(value < 0 or value > 1 for value in values):
             raise ValueError(f"quality metric '{self.param}' must be in [0, 1]")
         if kind in {"latency", "memory"} and any(value < 0 for value in values):
@@ -87,7 +91,7 @@ class Experiment(BaseModel):
         for name, parameter in value.items():
             if not name.strip():
                 raise ValueError("configuration parameter names cannot be empty")
-            if not isfinite(parameter):
+            if not math.isfinite(parameter):
                 raise ValueError(f"configuration value for '{name}' must be finite")
         return value
 

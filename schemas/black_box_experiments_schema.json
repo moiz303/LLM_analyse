@@ -1,0 +1,3990 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "source_dataset": {
+      "type": "string"
+    },
+    "experiments": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "experiment_id": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "timestamp_semantics": {
+              "type": "string"
+            },
+            "full_model_identifier": {
+              "type": "object",
+              "properties": {
+                "model_id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "compressed_model_identifier": {
+              "type": "object",
+              "properties": {
+                "variant": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "configuration": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "integer"
+                },
+                "strict_max_bytes": {
+                  "type": "integer"
+                },
+                "search_rounds": {
+                  "type": "integer"
+                },
+                "minimum_nll_gain": {
+                  "type": "number"
+                },
+                "token_embedding_type": {
+                  "type": "string"
+                },
+                "output_tensor_type": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "blk.0.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "per_layer_token_embd.weight": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "critical_parameters": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "source_revision": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "seed": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "llama_tag": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "llama_commit": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "imatrix_chunks": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "imatrix_context": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "calibration_version": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "quantization_method": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "strict_max_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "token_embedding_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "output_tensor_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tensor_map_artifact": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "blk.0.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.0.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.0.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.0.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_k.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_q.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "per_layer_token_embd.weight": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "baseline_values": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "integer"
+                },
+                "strict_max_bytes": {
+                  "type": "integer"
+                },
+                "search_rounds": {
+                  "type": "integer"
+                },
+                "minimum_nll_gain": {
+                  "type": "number"
+                },
+                "token_embedding_type": {
+                  "type": "string"
+                },
+                "output_tensor_type": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "blk.0.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_k.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_q.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "per_layer_token_embd.weight": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "parameter_ranges": {
+              "type": "object",
+              "properties": {
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "null"
+                    },
+                    "max": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "metrics": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "integer"
+                    },
+                    "compressed": {
+                      "type": "integer"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "number"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "per_class": {
+              "type": "array",
+              "items": {}
+            },
+            "parameter_analysis": {
+              "type": "object",
+              "properties": {
+                "ranking_available": {
+                  "type": "boolean"
+                },
+                "top_sensitive_tensors": {
+                  "type": "array",
+                  "items": {}
+                },
+                "tensor_type_counts": {
+                  "type": "object",
+                  "properties": {
+                    "Q6_K": {
+                      "type": "integer"
+                    },
+                    "Q8_0": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "restoration": {
+              "type": "object",
+              "properties": {
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_artifact": {
+                  "type": "string"
+                },
+                "imatrix_sha256": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "experiment_id": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "timestamp_semantics": {
+              "type": "string"
+            },
+            "full_model_identifier": {
+              "type": "object",
+              "properties": {
+                "model_id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "compressed_model_identifier": {
+              "type": "object",
+              "properties": {
+                "variant": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "configuration": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "integer"
+                },
+                "strict_max_bytes": {
+                  "type": "integer"
+                },
+                "search_rounds": {
+                  "type": "integer"
+                },
+                "minimum_nll_gain": {
+                  "type": "number"
+                },
+                "token_embedding_type": {
+                  "type": "string"
+                },
+                "output_tensor_type": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "blk.0.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "per_layer_token_embd.weight": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "critical_parameters": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "source_revision": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "seed": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "llama_tag": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "llama_commit": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "imatrix_chunks": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "imatrix_context": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "calibration_version": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "quantization_method": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "strict_max_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "token_embedding_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "output_tensor_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tensor_map_artifact": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "blk.0.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.0.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.0.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.1.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.10.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.11.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.12.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.13.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.14.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.15.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.16.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.17.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.18.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.19.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.2.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.20.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.21.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.22.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.23.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.24.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.25.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.26.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.27.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.28.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.29.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.3.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.30.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.31.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.32.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.33.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.34.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.4.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.5.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.6.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.7.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.8.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_output.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.attn_v.weight": {
+                          "type": "string"
+                        },
+                        "blk.9.ffn_down.weight": {
+                          "type": "string"
+                        },
+                        "per_layer_token_embd.weight": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "baseline_values": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "integer"
+                },
+                "strict_max_bytes": {
+                  "type": "integer"
+                },
+                "search_rounds": {
+                  "type": "integer"
+                },
+                "minimum_nll_gain": {
+                  "type": "number"
+                },
+                "token_embedding_type": {
+                  "type": "string"
+                },
+                "output_tensor_type": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "blk.0.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.0.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.1.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.10.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.11.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.12.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.13.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.14.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.15.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.16.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.17.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.18.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.19.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.2.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.20.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.21.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.22.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.23.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.24.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.25.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.26.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.27.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.28.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.29.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.3.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.30.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.31.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.32.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.33.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.34.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.4.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.5.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.6.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.7.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.8.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_output.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.attn_v.weight": {
+                      "type": "string"
+                    },
+                    "blk.9.ffn_down.weight": {
+                      "type": "string"
+                    },
+                    "per_layer_token_embd.weight": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "parameter_ranges": {
+              "type": "object",
+              "properties": {
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "null"
+                    },
+                    "max": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "metrics": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "integer"
+                    },
+                    "compressed": {
+                      "type": "integer"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "number"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "per_class": {
+              "type": "array",
+              "items": {}
+            },
+            "parameter_analysis": {
+              "type": "object",
+              "properties": {
+                "ranking_available": {
+                  "type": "boolean"
+                },
+                "top_sensitive_tensors": {
+                  "type": "array",
+                  "items": {}
+                },
+                "tensor_type_counts": {
+                  "type": "object",
+                  "properties": {
+                    "Q3_K": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "restoration": {
+              "type": "object",
+              "properties": {
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_artifact": {
+                  "type": "string"
+                },
+                "imatrix_sha256": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "experiment_id": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "timestamp_semantics": {
+              "type": "string"
+            },
+            "full_model_identifier": {
+              "type": "object",
+              "properties": {
+                "model_id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "compressed_model_identifier": {
+              "type": "object",
+              "properties": {
+                "variant": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "artifact": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "sha256": {
+                  "type": "string"
+                }
+              }
+            },
+            "configuration": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "null"
+                },
+                "strict_max_bytes": {
+                  "type": "null"
+                },
+                "search_rounds": {
+                  "type": "null"
+                },
+                "minimum_nll_gain": {
+                  "type": "null"
+                },
+                "token_embedding_type": {
+                  "type": "null"
+                },
+                "output_tensor_type": {
+                  "type": "null"
+                },
+                "tensor_map_artifact": {
+                  "type": "null"
+                },
+                "tensor_type_map": {
+                  "type": "null"
+                }
+              }
+            },
+            "critical_parameters": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "source_revision": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "seed": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "llama_tag": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "llama_commit": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "imatrix_chunks": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "imatrix_context": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "calibration_version": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "quantization_method": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "strict_max_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "token_embedding_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "output_tensor_type": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "tensor_map_artifact": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "tensor_type_map": {
+                  "type": "object",
+                  "properties": {
+                    "critical": {
+                      "type": "boolean"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "baseline_values": {
+              "type": "object",
+              "properties": {
+                "source_model_id": {
+                  "type": "string"
+                },
+                "source_revision": {
+                  "type": "string"
+                },
+                "seed": {
+                  "type": "integer"
+                },
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_chunks": {
+                  "type": "integer"
+                },
+                "imatrix_context": {
+                  "type": "integer"
+                },
+                "calibration_version": {
+                  "type": "string"
+                },
+                "quantization_method": {
+                  "type": "string"
+                },
+                "target_bytes": {
+                  "type": "null"
+                },
+                "strict_max_bytes": {
+                  "type": "null"
+                },
+                "search_rounds": {
+                  "type": "null"
+                },
+                "minimum_nll_gain": {
+                  "type": "null"
+                },
+                "token_embedding_type": {
+                  "type": "null"
+                },
+                "output_tensor_type": {
+                  "type": "null"
+                },
+                "tensor_map_artifact": {
+                  "type": "null"
+                },
+                "tensor_type_map": {
+                  "type": "null"
+                }
+              }
+            },
+            "parameter_ranges": {
+              "type": "object",
+              "properties": {
+                "target_bytes": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "null"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "search_rounds": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "null"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "minimum_nll_gain": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "null"
+                    },
+                    "max": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            },
+            "metrics": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "integer"
+                    },
+                    "compressed": {
+                      "type": "integer"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "number"
+                    },
+                    "compressed": {
+                      "type": "number"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "null"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "full": {
+                      "type": "null"
+                    },
+                    "compressed": {
+                      "type": "null"
+                    },
+                    "direction": {
+                      "type": "string"
+                    },
+                    "dataset": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            },
+            "per_class": {
+              "type": "array",
+              "items": {}
+            },
+            "parameter_analysis": {
+              "type": "object",
+              "properties": {
+                "ranking_available": {
+                  "type": "boolean"
+                },
+                "top_sensitive_tensors": {
+                  "type": "array",
+                  "items": {}
+                },
+                "tensor_type_counts": {
+                  "type": "object"
+                }
+              }
+            },
+            "restoration": {
+              "type": "object",
+              "properties": {
+                "llama_tag": {
+                  "type": "string"
+                },
+                "llama_commit": {
+                  "type": "string"
+                },
+                "imatrix_artifact": {
+                  "type": "string"
+                },
+                "imatrix_sha256": {
+                  "type": "string"
+                },
+                "tensor_map_artifact": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
