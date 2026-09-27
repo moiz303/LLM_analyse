@@ -116,6 +116,25 @@ data/model.json
 
 `comparison.json` существует всегда, он всегда имеет наивысший приоритет.
 
+### Препроцессинг вывода black box
+
+Black box отдаёт результат по формату
+`schemas/black_box_experiments_schema.json` (массив `experiments`, объектные
+модельные идентификаторы, критические параметры вида `{critical, type, value}`,
+отдельные `baseline_values` / `parameter_ranges`). Backend потребляет канонический
+формат `schemas/comparison_schema.json`. Между ними лежит препроцессор
+`backend/app/services/black_box_preprocessor.py`: при загрузке source of truth и
+в `ingest.py` сырой вывод black box автоматически приводится к виду
+`comparison.json` (берётся последний по timestamp запуск), а файлы, уже
+соответствующие каноническому формату, проходят без изменений.
+
+Схемы из `schemas/` используются препроцессором и валидацией во время работы
+сервера: они копируются в образ (`COPY schemas /app/schemas`) и дополнительно
+монтируются в backend-контейнер как `./schemas:/app/schemas:ro` (рядом с
+`/app/data`). Путь определяется в рантайме: переменная окружения `SCHEMAS_DIR`
+(задаётся в docker-compose), иначе — поиск папки `schemas/` среди родительских
+каталогов приложения; при отсутствии возвращается понятная ошибка.
+
 ---
 
 ## Стек

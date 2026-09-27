@@ -12,6 +12,7 @@ services:
       BACKEND_CONTAINER_PORT: ${BACKEND_CONTAINER_PORT}
       INFLUXDB_URL: ${INFLUXDB_URL}
       DATA_DIR: /app/data
+      SCHEMAS_DIR: /app/schemas
       COMPARISON_PATH: /app/comparison.json
       MODEL_PATH: /app/data/model.json
       EXPERIMENTS_DIR: /app/data/experiments
@@ -24,6 +25,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./comparison.json:/app/comparison.json:ro
+      - ./schemas:/app/schemas:ro
     depends_on:
       influxdb:
         condition: service_healthy
