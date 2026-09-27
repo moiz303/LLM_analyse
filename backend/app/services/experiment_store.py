@@ -90,7 +90,7 @@ class ExperimentStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(f"{path.suffix}.tmp")
         with temporary.open("w", encoding="utf-8") as handle:
-            json.dump(value, handle, ensure_ascii=False, indent=2, default=str)
+            json.dump(value, handle, ensure_ascii=False, indent=2, default=str, allow_nan=True)
             handle.write("\n")
         temporary.replace(path)
 

@@ -243,11 +243,12 @@ Python на хост-системе для обычного запуска не 
 - InfluxDB: <http://localhost:8086>
 - Grafana: <http://localhost:3000>
 - Dashboard: <http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk>
+- Frontend (Next.js): <http://localhost:5173> (в контейнере - 3100)
 
 Frontend может использовать:
 
 ```env
-VITE_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
+NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
 ```
 
 Логин Grafana берётся из `GRAFANA_ADMIN_USER` и

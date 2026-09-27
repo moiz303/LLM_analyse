@@ -36,6 +36,5 @@ pip-delete-this-directory.txt
 .env
 comparison.json
 black_box_experiments.json
-comparison.json
 data/model.json
 data/experiments/*.json

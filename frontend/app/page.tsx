@@ -24,29 +24,46 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_URL || '
 const GRAFANA_DASHBOARD_DEFAULT = 'http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk'
 const GRAFANA_URL = process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || process.env.VITE_GRAFANA_DASHBOARD_URL || GRAFANA_DASHBOARD_DEFAULT
 
-type SensitivityEntry = number | { lower?: number; upper?: number; power_lower?: number; power_upper?: number }
+// Backend-контракт: вместо «нет измерения» приходит JSON null (см. black_box_experiments_schema.json —
+// type: ["null", "number"], и backend/app/json_util.py). Поэтому все числовые поля объявлены как `number | null`,
+// а чувствительность может быть не только числом, но и объектом с null-границами.
+type NumOrNull = number | null
+type SensitivityEntry = NumOrNull | { lower?: NumOrNull; upper?: NumOrNull; power_lower?: NumOrNull; power_upper?: NumOrNull }
 type Parameter = { name: string; baseline: number; ui_range: { min: number; max: number }; valid_range?: { min: number | null; max: number | null }; critical?: boolean; sensitivity?: Record<string, SensitivityEntry> }
-type Metric = { name: string; full: number; compressed: number; absolute_delta: number; relative_delta: number | null; direction: 'higher_is_better' | 'lower_is_better'; kind?: string; definition?: { direction?: string; kind?: string } }
-type Model = { model_id: string; parameters: Parameter[]; current_configuration: Record<string, number>; baseline: { configuration: Record<string, number>; metrics: Record<string, number> }; metrics: Metric[]; metadata?: { full_model?: string; compressed_model?: string; experiment_id?: string; timestamp?: string }; constraints?: Record<string, string> }
+type Metric = { name: string; full: NumOrNull; compressed: NumOrNull; absolute_delta: NumOrNull; relative_delta: NumOrNull; direction: 'higher_is_better' | 'lower_is_better'; kind?: string; definition?: { direction?: string; kind?: string } }
+type Model = { model_id: string; parameters: Parameter[]; current_configuration: Record<string, number>; baseline: { configuration: Record<string, number>; metrics: Record<string, NumOrNull> }; metrics: Metric[]; metadata?: { full_model?: string; compressed_model?: string; experiment_id?: string; timestamp?: string }; constraints?: Record<string, string> }
 type Support = { score: number; level: string; nearest_experiment_id?: string | null; distance: number }
-type Prediction = { prediction_mode?: string; model_id?: string; prediction: Record<string, number>; baseline: Record<string, number>; configuration: Record<string, number>; support?: Support; metrics?: Metric[]; persisted?: boolean }
-type Experiment = { experiment_id: string; timestamp?: string; configuration: Record<string, number>; metrics: Record<string, number>; model_id?: string }
+type Prediction = { prediction_mode?: string; model_id?: string; prediction: Record<string, NumOrNull>; baseline: Record<string, NumOrNull>; configuration: Record<string, number>; support?: Support; metrics?: Metric[]; persisted?: boolean }
+type Experiment = { experiment_id: string; timestamp?: string; configuration: Record<string, number>; metrics: Record<string, NumOrNull>; model_id?: string }
 
-function formatValue(value: number | undefined, name = '') {
-  if (value === undefined || Number.isNaN(value)) return '—'
-  return name.includes('accuracy') || name.includes('f1') ? value.toFixed(4) : value.toFixed(2)
+// Единственная нормальная форма для чисел из API: null / undefined / NaN / Infinity -> null.
+function num(value: NumOrNull | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function formatValue(value: NumOrNull | undefined, name = '') {
+  const n = num(value)
+  if (n === null) return '—'
+  return name.includes('accuracy') || name.includes('f1') ? n.toFixed(4) : n.toFixed(2)
 }
 function prettyName(name: string) { return name.replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }
-function deltaClass(delta: number | undefined, direction?: string) {
-  if (delta === undefined || delta === 0) return 'baseline-text'
+function deltaClass(delta: number | null | undefined, direction?: string) {
+  if (delta === undefined || delta === null || delta === 0) return 'baseline-text'
   const increaseIsBetter = direction !== 'lower_is_better'
   return (delta > 0) === increaseIsBetter ? 'positive' : 'negative'
 }
-function metricTone(metric: Metric, prediction?: number, baseline?: number) {
-  if (prediction === undefined || baseline === undefined) return 'neutral'
-  const better = metric.direction === 'higher_is_better' ? prediction >= baseline : prediction <= baseline
-  const distance = Math.abs(prediction - baseline) / (Math.abs(baseline) || 1)
+function metricTone(metric: Metric, prediction?: number | null, baseline?: number | null) {
+  const p = num(prediction); const b = num(baseline)
+  if (p === null || b === null) return 'neutral'
+  const better = metric.direction === 'higher_is_better' ? p >= b : p <= b
+  const distance = Math.abs(p - b) / (Math.abs(b) || 1)
   return better || distance < 0.01 ? 'good' : distance < 0.05 ? 'warn' : 'bad'
+}
+// Ширина полосы: safe-отношение двух чисел с null (нет замера -> минимальная полоса).
+function barWidth(value: number | null | undefined, total: number | null | undefined, min = 8) {
+  const v = num(value); const t = num(total)
+  if (v === null || t === null || t === 0) return min
+  return Math.min(100, Math.max(min, (v / t) * 100))
 }
 
 export default function Page() {
@@ -54,6 +71,23 @@ export default function Page() {
   const [config, setConfig] = useState<Record<string, number>>({})
   const [prediction, setPrediction] = useState<Prediction | null>(null)
   const [experiments, setExperiments] = useState<Experiment[]>([])
+
+  // Санитаризация ответа API: JSON null в числовых слотах (контракт black-box-схемы)
+  // не должен приводить к NaN-арифметике и падению рендера.
+  const sanitizeModel = (raw: Model): Model => ({
+    ...raw,
+    parameters: (raw.parameters ?? []).map((p) => ({ ...p, baseline: num(p.baseline) ?? 0 })),
+    current_configuration: Object.fromEntries(Object.entries(raw.current_configuration ?? {}).map(([k, v]) => [k, num(v) ?? 0])),
+    metrics: (raw.metrics ?? []).map((m) => ({ ...m, full: num(m.full), compressed: num(m.compressed), absolute_delta: num(m.absolute_delta), relative_delta: num(m.relative_delta) })),
+    baseline: { configuration: raw.baseline?.configuration ?? {}, metrics: Object.fromEntries(Object.entries(raw.baseline?.metrics ?? {}).map(([k, v]) => [k, num(v)])) },
+  })
+  const sanitizePrediction = (raw: Prediction): Prediction => ({
+    ...raw,
+    prediction: Object.fromEntries(Object.entries(raw.prediction ?? {}).map(([k, v]) => [k, num(v)])),
+    baseline: Object.fromEntries(Object.entries(raw.baseline ?? {}).map(([k, v]) => [k, num(v)])),
+  })
+  const sanitizeExperiments = (raw: unknown): Experiment[] => Array.isArray(raw) ? raw.map((e) => ({ ...e, configuration: Object.fromEntries(Object.entries(e?.configuration ?? {}).map(([k, v]: [string, unknown]) => [k, typeof v === 'number' && Number.isFinite(v) ? v : 0])), metrics: Object.fromEntries(Object.entries(e?.metrics ?? {}).map(([k, v]: [string, unknown]) => [k, num(v as number)])) })) : []
+
   const [health, setHealth] = useState<'loading' | 'online' | 'offline'>('loading')
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
@@ -68,9 +102,9 @@ export default function Page() {
         fetch(`${API_URL}/health`), fetch(`${API_URL}/api/model`), fetch(`${API_URL}/api/experiments`),
       ])
       if (!healthResponse.ok || !modelResponse.ok) throw new Error('Сервер недоступен')
-      const nextModel = await modelResponse.json() as Model
+      const nextModel = sanitizeModel(await modelResponse.json() as Model)
       setModel(nextModel); setConfig(nextModel.current_configuration); setHealth('online')
-      if (experimentsResponse.ok) setExperiments(await experimentsResponse.json())
+      if (experimentsResponse.ok) setExperiments(sanitizeExperiments(await experimentsResponse.json()))
     } catch (err) { setHealth('offline'); setError(err instanceof Error ? err.message : 'Сейчас сервер отключен') }
     finally { setLoading(false) }
   }, [])
@@ -83,7 +117,7 @@ export default function Page() {
       const response = await fetch(`${API_URL}/api/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parameters: nextConfig }) })
       const body = await response.json()
       if (!response.ok) throw new Error(body.detail || 'Не удалось получить прогноз')
-      if (id === requestId.current) setPrediction(body)
+      if (id === requestId.current) setPrediction(sanitizePrediction(body))
     } catch (err) { if (id === requestId.current) setError(err instanceof Error ? err.message : 'Не удалось получить прогноз') }
     finally { if (id === requestId.current) setCalculating(false) }
   }, [])
@@ -94,7 +128,14 @@ export default function Page() {
     return () => window.clearTimeout(timeout)
   }, [config, model, predict])
 
-  const sensitivity = useMemo(() => model?.parameters.map((parameter) => ({ ...parameter, score: Math.max(...Object.values(parameter.sensitivity || {}).map((value) => typeof value === 'number' ? Math.abs(value) : Math.max(Math.abs(value.lower || 0), Math.abs(value.upper || 0), Math.abs(value.power_lower || 0), Math.abs(value.power_upper || 0))), 0) })).sort((a, b) => b.score - a.score) || [], [model])
+  // Слайдер принимает только конечные числа: null/NaN из API не должны
+  // попадать в value<input type="range"> (React роняет рендер на NaN).
+  const sliderValue = (raw: number | undefined, baseline: number) => {
+    const n = num(raw) ?? num(baseline) ?? 0
+    return Number.isFinite(n) ? n : 0
+  }
+
+  const sensitivity = useMemo(() => model?.parameters.map((parameter) => ({ ...parameter, score: Math.max(...Object.values(parameter.sensitivity || {}).map((value) => { if (typeof value === 'number') return Math.abs(num(value) ?? 0); if (!value) return 0; return Math.max(Math.abs(num(value.lower) ?? 0), Math.abs(num(value.upper) ?? 0), Math.abs(num(value.power_lower) ?? 0), Math.abs(num(value.power_upper) ?? 0)) }), 0) })).sort((a, b) => b.score - a.score) || [], [model])
 
   const reset = async () => {
     requestId.current += 1
@@ -103,7 +144,7 @@ export default function Page() {
       const response = await fetch(`${API_URL}/api/reset`, { method: 'POST' })
       const body = await response.json()
       if (!response.ok) throw new Error(body.detail || 'Не удалось сбросить значения')
-      setConfig(body.configuration); setPrediction(body)
+      setConfig(sanitizePrediction(body).configuration); setPrediction(sanitizePrediction(body))
     } catch (err) { setError(err instanceof Error ? err.message : 'Не удалось сбросить значения') }
     finally { setCalculating(false) }
   }
@@ -128,9 +169,9 @@ export default function Page() {
           <div className="section-heading"><div><p className="eyebrow">Конфигурация</p><h2>Параметры модели</h2></div><SlidersHorizontal /></div>
           <p className="muted intro">Настройте профиль сжатия и наблюдайте прогноз суррогатной модели в реальном времени.</p>
           <div className="parameter-list">
-            {model?.parameters.map((parameter) => { const value = config[parameter.name] ?? parameter.baseline; const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => setSelectedParam(parameter.name)}>
+            {model?.parameters.map((parameter) => { const value = sliderValue(config[parameter.name], parameter.baseline); const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => setSelectedParam(parameter.name)}>
               <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">критический</span>}</div><strong>{value.toFixed(2)}</strong></div>
-              <input aria-label={parameter.name} type="range" min={parameter.ui_range.min} max={parameter.ui_range.max} step="0.01" value={value} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
+              <input aria-label={parameter.name} type="range" min={parameter.ui_range.min} max={parameter.ui_range.max} step="0.01" value={Math.min(Math.max(value, parameter.ui_range.min), parameter.ui_range.max)} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
               <div className="range-labels"><span>min {parameter.ui_range.min}</span><span>max {parameter.ui_range.max}</span></div>
               <div className="parameter-details"><span>Baseline <strong>{parameter.baseline.toFixed(2)}</strong></span><span>Current <strong>{value.toFixed(2)}</strong></span><span className={deltaClass(delta)}>Delta <strong>{delta === 0 ? '0.00' : `${delta > 0 ? '+' : ''}${delta.toFixed(2)}`}</strong></span></div>
             </div> })}
@@ -139,8 +180,8 @@ export default function Page() {
         </aside>
         <section className="main-column">
           <div className="hero-row"><div><p className="eyebrow">{model?.model_id || 'Модель'} / Анализ в реальном времени</p><h2>Оценка качества модели <span>одним взглядом</span></h2></div><div className="calc-state">{calculating ? <><Loader2 className="spin" /> Расчёт</> : health === 'online' && prediction ? <><Check /> Синхронизировано с backend</> : <><AlertTriangle /> Ожидание backend</>}</div></div>
-          <div className="metric-grid">{model?.metrics.map((metric) => { const predicted = prediction?.prediction[metric.name]; const base = prediction?.baseline[metric.name] ?? model.baseline.metrics[metric.name]; const delta = predicted !== undefined && base !== undefined ? predicted - base : undefined; const tone = metricTone(metric, predicted, base); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">Прогноз</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${Math.min(100, Math.max(8, base ? (predicted || 0) / base * 100 : 8))}%` }} /></div></article> })}</div>
-          <div className="compare-card panel"><div className="card-heading"><div><p className="eyebrow">Сравнение с исходной моделью</p><h3>Оригинал <span>vs</span> сжатая</h3></div><div className="legend"><span className="legend-dot actual" /> Сжатая версия <span className="legend-dot predicted" /> Прогноз</div></div><div className="comparison-table">{model?.metrics.map((metric) => <div className="comparison-row" key={metric.name}><span className="comparison-name">{prettyName(metric.name)}</span><div className="comparison-line"><span className="line-fill" style={{ width: `${Math.min(100, Math.max(12, Math.abs(metric.compressed / (metric.full || 1)) * 100))}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(metric.compressed, metric.name)}</span><span className="full-value">{formatValue(metric.full, metric.name)} full</span></div>)}</div></div>
+          <div className="metric-grid">{model?.metrics.map((metric) => { const predicted = num(prediction?.prediction[metric.name]); const base = num(prediction?.baseline[metric.name] ?? model.baseline.metrics[metric.name]); const delta = predicted !== null && base !== null ? predicted - base : undefined; const tone = metricTone(metric, predicted, base); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">Прогноз</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${barWidth(predicted, base)}%` }} /></div></article> })}</div>
+          <div className="compare-card panel"><div className="card-heading"><div><p className="eyebrow">Сравнение с исходной моделью</p><h3>Оригинал <span>vs</span> сжатая</h3></div><div className="legend"><span className="legend-dot actual" /> Сжатая версия <span className="legend-dot predicted" /> Прогноз</div></div><div className="comparison-table">{model?.metrics.map((metric) => <div className="comparison-row" key={metric.name}><span className="comparison-name">{prettyName(metric.name)}</span><div className="comparison-line"><span className="line-fill" style={{ width: `${barWidth(Math.abs(num(metric.compressed) ?? 0), Math.abs(num(metric.full) ?? 0), 12)}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(metric.compressed, metric.name)}</span><span className="full-value">{formatValue(metric.full, metric.name)} full</span></div>)}</div></div>
           <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><p className="eyebrow">Сохранённые запуски</p><h3>История экспериментов</h3></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${selectedExperiment?.experiment_id === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Метка времени недоступна'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}<small>compressed</small></div><ChevronRight /></button>) : <div className="empty-state"><History /> Сохранённых экспериментов пока нет</div>}{selectedExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity /> Фактические метрики {selectedExperiment.experiment_id} (измеренный запуск)</div><div className="actual-reference-grid">{Object.entries(selectedExperiment.metrics).map(([name, value]) => { const predicted = prediction?.prediction[name]; return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong><span className="predicted-ref">pred {formatValue(predicted, name)}</span></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><p className="eyebrow">Суррогатная модель</p><h3>Точность прогноза</h3></div><Gauge /></div><div className={`support-level ${(prediction?.support?.level || 'unknown').toLowerCase()}`}>{prediction?.support?.level || 'pending'}</div>{prediction?.support?.level?.toLowerCase() === 'low' && <div className="support-warning"><AlertTriangle /> Низкая поддержка: относитесь к этому прогнозу как к оценке за пределами надёжного покрытия экспериментами.</div>}<p className="muted">Уровень поддержки текущей конфигурации существующими экспериментами</p><div className="support-meta"><span>Ближайший эксперимент</span><strong>{prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Разница</span><strong>{prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
           {/* Секция Grafana: iframe вынесен в отдельный компонент (см.
               components/GrafanaDashboard), URL — только из environment. */}
