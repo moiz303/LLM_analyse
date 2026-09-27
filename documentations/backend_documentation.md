@@ -1,8 +1,15 @@
-# Backend / DevOps MVP — Interactive Model Compression Demo
+# Backend / DevOps — техническая документация
 
-## 1. Цель
+> **Рабочая ветка:** `backend` — вся разработка серверной и инфраструктурной
+> части ведётся в этой ветке репозитория.
 
-Необходимо реализовать backend и инфраструктурную часть MVP интерактивного демо для исследования влияния изменения параметров модели.
+Backend и инфраструктурная часть MVP интерактивного демо для исследования
+влияния изменения параметров модели. Документация описывает архитектуру,
+контракты данных, API, конвейер InfluxDB/Grafana и требования к тестированию.
+
+---
+
+## 1. Назначение и место в системе
 
 Backend является связующим слоем между:
 
@@ -18,9 +25,9 @@ Backend является связующим слоем между:
 Основная идея:
 
 ```text
-Black Box
+Black Box (Kaggle)
     |
-    | expensive experiment
+    | expensive experiment (~12 hours)
     v
 Backend
     |
@@ -39,11 +46,11 @@ Backend
             |
             v
          Frontend
-````
+```
 
 ---
 
-# 2. Ключевой архитектурный принцип
+## 2. Ключевой архитектурный принцип
 
 Black box не должен запускаться при каждом изменении параметров пользователем.
 
@@ -73,11 +80,12 @@ Predictor
                    Grafana
 ```
 
-Таким образом, дорогостоящий black-box experiment выполняется offline, а интерактивная модель работает быстро.
+Таким образом, дорогостоящий black-box experiment выполняется offline,
+а интерактивная модель работает быстро.
 
 ---
 
-# 3. Ответственность Backend / DevOps
+## 3. Ответственность Backend / DevOps
 
 Backend / DevOps отвечает за:
 
@@ -106,9 +114,11 @@ Frontend и black box считаются отдельными контракта
 
 ---
 
-# 4. Input от Black Box
+## 4. Контракт входных данных от Black Box
 
-Black box предоставляет experiment JSON.
+Black box предоставляет experiment JSON
+(источник — Kaggle notebook, см. `README.md`, раздел «Ссылки»:
+<https://www.kaggle.com/code/flyin123/gemmaq5>).
 
 Пример:
 
@@ -159,13 +169,14 @@ Black box предоставляет experiment JSON.
 }
 ```
 
-Backend должен валидировать этот формат.
+Backend должен валидировать этот формат (см. также `gemma_documentation.md` —
+формат выходного JSON black box как единого контракта).
 
 ---
 
-# 5. BE-001 — Backend skeleton
+## 5. Стек и структура проекта
 
-Использовать:
+Используется:
 
 * Python;
 * FastAPI;
@@ -212,7 +223,7 @@ backend/
 
 ---
 
-# 6. BE-002 — Experiment JSON validation
+## 6. Валидация experiment JSON
 
 Создать Pydantic models для experiment JSON.
 
@@ -243,16 +254,17 @@ memory >= 0
 
 ---
 
-# 7. BE-003 — Three-Tier Data Architecture
-Backend должен четко разделять три типа данных:
+## 7. Three-Tier Data Architecture
 
-1. Source of Truth (`comparison.json`):
+Backend четко разделяет три типа данных:
+
+1. **Source of Truth (`comparison.json`)**:
    - Файл `comparison.json` является ИСХОДНИКОМ.
    - Содержит эталонные данные Full Model и Compressed Model.
    - Используется ТОЛЬКО для операции "Reset to baseline".
    - Никогда не перезаписывается системой автоматически.
 
-2. User Buffer (`model.json`):
+2. **User Buffer (`model.json`)**:
    - Файл `model.json` является БУФЕРОМ ОБМЕНА.
    - При старте копирует данные из `comparison.json`.
    - Сюда сохраняются ЛЮБЫЕ изменения, внесенные пользователем через UI.
@@ -262,16 +274,17 @@ Backend должен четко разделять три типа данных:
      туда последнюю предсказанную конфигурацию). При первом обращении, если файла
      нет, он создаётся копией `comparison.json`.
 
-3. Experiment History (`experiments/`):
+3. **Experiment History (`experiments/`)**:
    - Папка `experiments/` хранит ПРОГОНЫ (snapshots).
    - Каждый файл `exp_XXX.json` — это зафиксированная конфигурация + результат prediction.
    - Используется для расчёта prediction support (близость текущей конфигурации
      к известным экспериментам) и отображения истории. Сам sensitivity-предиктор
      строится по `comparison.json` (Source of Truth), а не по snapshots.
    - Не влияет на текущее состояние sliders напрямую.
+
 ---
 
-# 8. BE-004 — Baseline model
+## 8. Baseline model и логика Reset
 
 Baseline определяется на основании black-box experiment.
 
@@ -302,8 +315,10 @@ memory = 128
 
 Baseline compressed metrics являются фактической точкой, относительно которой работает predictor.
 
-## BE-004b — Reset Logic & Baseline Anchoring
-Операция "Reset to baseline" должна работать строго по алгоритму:
+### Логика операции "Reset to baseline"
+
+Операция должна работать строго по алгоритму:
+
 1. Прочитать `data/comparison.json` (Source of Truth).
 2. Извлечь configuration и metrics compressed model.
 3. Перезаписать `data/model.json` этими значениями.
@@ -311,11 +326,12 @@ Baseline compressed metrics являются фактической точкой
 5. Выполнить prediction для новой конфигурации (должна совпасть с baseline compressed metrics).
 
 ВАЖНО: Reset НЕ должен обращаться к `experiments/` или последнему состоянию `model.json`.
-Он всегда возвращает систему к исходному "якорю" из `comparison.json`. Также возвращает `model.json` к состоянию `comparison.json`.
+Он всегда возвращает систему к исходному "якорю" из `comparison.json`. Также возвращает
+`model.json` к состоянию `comparison.json`.
 
 ---
 
-# 9. BE-005 — Model configuration
+## 9. Model configuration
 
 Создать отдельную конфигурацию модели.
 
@@ -368,29 +384,7 @@ UI range не должен автоматически считаться физ�
 
 ---
 
-# 10. BE-006 — Model API
-
-Реализовать:
-
-```http
-GET /api/model
-```
-
-Endpoint должен возвращать frontend:
-
-* model_id;
-* список параметров;
-* baseline;
-* UI range;
-* metric definitions;
-* metric direction;
-* необходимые ограничения.
-
-Frontend не должен хардкодить эти данные.
-
----
-
-# 11. BE-007 — Metric normalization
+## 10. Metric normalization
 
 Внутри backend привести metrics к единой модели.
 
@@ -425,11 +419,12 @@ direction = lower_is_better
 
 ---
 
-# 12. BE-008 — Sensitivity Predictor
+## 11. Sensitivity Predictor
 
 Это центральная математическая задача MVP.
 
-Необходимо реализовать predictor, который оценивает изменение metrics при изменении параметров без повторного запуска black box.
+Необходимо реализовать predictor, который оценивает изменение metrics при
+изменении параметров без повторного запуска black box.
 
 Интерфейс:
 
@@ -446,9 +441,7 @@ class SensitivityPredictor(Predictor):
     ...
 ```
 
----
-
-# 13. Predictor model
+### Модель предиктора
 
 Для baseline configuration:
 
@@ -496,7 +489,8 @@ accuracy_pred =
     accuracy_compressed - D_accuracy
 ```
 
-Конкретная математическая реализация может быть адаптирована под реально доступные sensitivity данные black box.
+Конкретная математическая реализация может быть адаптирована под реально
+доступные sensitivity данные black box.
 
 Главное требование — модель должна быть:
 
@@ -505,9 +499,7 @@ accuracy_pred =
 * ограниченной физическими constraints;
 * anchored в baseline.
 
----
-
-# 14. BE-009 — Baseline anchoring
+### Baseline anchoring
 
 Обязательное свойство predictor:
 
@@ -536,42 +528,19 @@ accuracy = 0.7589
 
 Это должно быть покрыто unit test.
 
----
-
-# 15. BE-010 — Different models for different metrics
+### Раздельные модели для разных метрик
 
 Не использовать одну математическую формулу бездумно для всех metrics.
 
-### Quality
+**Quality** (accuracy, F1 и другие quality metrics) — использовать sensitivity model.
 
-Для:
+**Memory** — если доступны parameter count, quantization bits, group size,
+overhead, memory желательно считать аналитически.
 
-* accuracy;
-* F1;
-* других quality metrics.
+**Latency** — может использовать sensitivity/surrogate model. Архитектура
+должна позволять впоследствии создать отдельный predictor для latency.
 
-Использовать sensitivity model.
-
-### Memory
-
-Если доступны:
-
-* parameter count;
-* quantization bits;
-* group size;
-* overhead;
-
-memory желательно считать аналитически.
-
-### Latency
-
-Latency может использовать sensitivity/surrogate model.
-
-Архитектура должна позволять впоследствии создать отдельный predictor для latency.
-
----
-
-# 16. BE-011 — Prediction constraints
+### Prediction constraints
 
 Backend не должен возвращать физически невозможные значения.
 
@@ -591,11 +560,10 @@ memory >= 0
 * неправильные types;
 * значения вне допустимого диапазона.
 
----
+### Prediction support
 
-# 17. BE-012 — Prediction support
-
-Backend должен оценивать, насколько текущая configuration покрыта известными экспериментальными данными.
+Backend должен оценивать, насколько текущая configuration покрыта известными
+экспериментальными данными.
 
 Для MVP допустимо использовать distance до ближайших известных experiment configurations.
 
@@ -626,17 +594,58 @@ low
 
 без соответствующей статистической модели.
 
-Если configuration находится далеко от известных experiments, backend должен вернуть `low` и frontend должен получить возможность показать extrapolation warning.
+Если configuration находится далеко от известных experiments, backend должен
+вернуть `low` и frontend должен получить возможность показать extrapolation warning.
+
+### Расширяемость архитектуры
+
+MVP predictor — `SensitivityPredictor`. Но API и внутренняя архитектура должны
+позволять в будущем использовать:
+
+```text
+SensitivityPredictor
+InterpolationPredictor
+GaussianProcessPredictor
+MLSurrogatePredictor
+```
+
+Frontend не должен знать, какой predictor используется. Frontend получает:
+
+```text
+prediction_mode
+```
+
+например:
+
+```text
+sensitivity_model
+interpolation
+surrogate_ml
+```
 
 ---
 
-# 18. BE-013 — Prediction API
+## 12. REST API
 
-Основной endpoint:
+### GET /api/model
 
-```http
-POST /api/predict
-```
+Endpoint должен возвращать frontend:
+
+* model_id;
+* список параметров;
+* baseline;
+* UI range;
+* metric definitions;
+* metric direction;
+* необходимые ограничения.
+
+Реализация: конфигурация из `comparison.json` + `current_configuration`
+из `data/model.json` (User Buffer). Подробный контракт ответа описан в
+`frontend_documentation.md` (раздел «Контракты API»).
+
+Frontend не должен хардкодить эти данные.
+
+### POST /api/predict
 
 Request:
 
@@ -694,17 +703,46 @@ Response:
 
 Frontend не должен самостоятельно повторять prediction calculation.
 
----
+### POST /api/reset
 
-# 19. BE-014 — Prediction persistence
+Читает `comparison.json` → пишет в `model.json` → возвращает baseline
+в формате `PredictionResponse` (см. раздел 8, «Логика операции Reset to baseline»).
 
-Каждый prediction, созданный через:
+### GET /health
 
-```http
-POST /api/predict
+Минимальный response:
+
+```json
+{
+  "status": "ok"
+}
 ```
 
-должен записываться в InfluxDB.
+Endpoint используется для проверки доступности backend.
+
+### Опциональные endpoints
+
+```http
+GET  /api/experiments              -> Список прогонов из data/experiments/ (для истории в UI)
+GET  /api/experiments/{id}         -> Доступ к конкретному эксперименту из списка по id
+POST /api/experiments              -> Создание эксперимента
+```
+
+Frontend MVP не должен зависеть от этих endpoint'ов.
+
+### API documentation
+
+FastAPI предоставляет OpenAPI/Swagger-описание; в текущей MVP-сборке публичный
+`/docs` намеренно отключён — каноническими контрактами считаются
+`frontend_documentation.md` и README, раздел «API».
+
+---
+
+## 13. Persistence и разделение actual/predicted
+
+### Prediction persistence
+
+Каждый prediction, созданный через `POST /api/predict`, должен записываться в InfluxDB.
 
 Поток:
 
@@ -727,11 +765,10 @@ InfluxDB
 Grafana
 ```
 
-Это означает, что изменение slider'а пользователя становится datapoint'ом, который затем может отображаться в Grafana.
+Это означает, что изменение slider'а пользователя становится datapoint'ом,
+который затем может отображаться в Grafana.
 
----
-
-# 20. BE-015 — Actual / Predicted separation
+### Actual / Predicted separation
 
 Необходимо явно различать:
 
@@ -763,15 +800,32 @@ result_type = predicted
 
 для surrogate prediction.
 
-Не смешивать prediction с actual data.
+Не смешивать prediction с actual data. Prediction не является результатом запуска black box.
 
-Prediction не является результатом запуска black box.
+### Source of truth semantics
 
----
+Необходимо явно разделять:
 
-# 21. BE-016 — Prediction metadata
+**Actual** — фактически измерено black box:
 
-Каждая prediction запись должна содержать достаточно информации для последующей визуализации и анализа.
+```text
+source:
+black box
+```
+
+**Predicted** — рассчитано backend predictor:
+
+```text
+source:
+surrogate model
+```
+
+Prediction никогда не должна выдаваться за результат реального black-box запуска.
+
+### Prediction metadata
+
+Каждая prediction запись должна содержать достаточно информации для последующей
+визуализации и анализа.
 
 Минимально:
 
@@ -810,12 +864,14 @@ support_level
 
 ---
 
-# 22. BE-017 — Actual data ingestion
+## 14. Ingestion и единый experiment contract
+
+### Actual data ingestion
 
 Существующий сценарий:
 
 ```bash
-python ingest.py comparison.json
+python backend/ingest.py comparison.json
 ```
 
 должен использоваться для загрузки actual experiment data в InfluxDB.
@@ -826,7 +882,7 @@ python ingest.py comparison.json
 comparison.json
         |
         v
-ingest.py
+backend/ingest.py
         |
         v
 InfluxDB
@@ -835,11 +891,11 @@ InfluxDB
 Grafana
 ```
 
-`ingest.py` не должен запускаться при каждом prediction.
+`ingest.py` не должен запускаться при каждом prediction. В текущей сборке
+ingest выполняется автоматически при старте backend-контейнера; ручной запуск
+нужен только для перезагрузки файлов.
 
----
-
-# 23. BE-018 — Единственный experiment contract
+### Единственный experiment contract
 
 Не создавать отдельные несовместимые форматы для:
 
@@ -869,7 +925,9 @@ Experiment JSON
 
 ---
 
-# 24. BE-019 — InfluxDB
+## 15. Инфраструктура: InfluxDB, Grafana, Docker
+
+### InfluxDB
 
 InfluxDB используется как хранилище временных рядов для Grafana.
 
@@ -880,13 +938,9 @@ actual experiment results
 predicted results
 ```
 
-InfluxDB не должен быть API для frontend.
+InfluxDB не должен быть API для frontend. Frontend не должен напрямую подключаться к InfluxDB.
 
-Frontend не должен напрямую подключаться к InfluxDB.
-
----
-
-# 25. BE-020 — Grafana infrastructure
+### Docker Compose
 
 Docker Compose должен поднимать:
 
@@ -894,27 +948,21 @@ Docker Compose должен поднимать:
 backend
 influxdb
 grafana
+frontend
 ```
 
-Grafana должна быть доступна:
+Сервисы по умолчанию доступны:
 
 ```text
-http://localhost:3000
+Grafana:  http://localhost:3000
+InfluxDB: http://localhost:8086
+Backend:  http://localhost:<backend_port>
+Frontend: http://localhost:5173
 ```
 
-InfluxDB:
+### Environment configuration
 
-```text
-http://localhost:8086
-```
-
-Backend должен быть доступен по URL, указанному в README.
-
----
-
-# 26. BE-021 — Environment configuration
-
-Использовать существующий `.env.example`:
+Используется существующий `.env.example`:
 
 ```env
 # === ports ===
@@ -935,12 +983,9 @@ GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 Credentials и token должны задаваться локально и не попадать в Git.
-
 README должен описывать, какие значения необходимо заполнить.
 
----
-
-# 27. BE-022 — InfluxDB provisioning
+### InfluxDB provisioning
 
 Настроить:
 
@@ -957,9 +1002,13 @@ Retention:
 
 InfluxDB должен быть готов принимать данные после запуска Docker Compose.
 
----
 
-# 28. BE-023 — Grafana provisioning
+> ВАЖНО!  
+> Файл provisioning/datasources/influxdb.yml требует отдельной настройки:  
+> Необходимо задать datasources.secureJsonData.token, совпадающий с INFLUXDB_TOKEN.
+
+
+### Grafana provisioning
 
 Использовать существующую структуру:
 
@@ -981,9 +1030,7 @@ Grafana должна автоматически:
 
 Frontend не должен выполнять эти действия вручную.
 
----
-
-# 29. BE-024 — Grafana datasource
+### Grafana datasource
 
 Datasource должен указывать на InfluxDB через Docker network.
 
@@ -1003,56 +1050,19 @@ http://localhost:8086
 
 Datasource должен быть настроен через provisioning.
 
----
-
-# 30. BE-025 — Grafana Dashboard
+### Grafana Dashboard
 
 Dashboard должен отображать данные, записанные backend.
 
 Минимально необходимо предусмотреть:
 
-### Actual
+* **Actual** — результаты реальных black-box experiments;
+* **Predicted** — результаты surrogate predictions;
+* **Baseline** — исходную точку;
+* **History** — историю изменений configuration/prediction;
+* **Metrics** — минимально: accuracy, F1, latency, memory.
 
-Результаты реальных black-box experiments.
-
-### Predicted
-
-Результаты surrogate predictions.
-
-### Baseline
-
-Исходную точку.
-
-### History
-
-Историю изменений configuration/prediction.
-
-### Metrics
-
-Минимально:
-
-* accuracy;
-* F1;
-* latency;
-* memory.
-
----
-
-# 31. BE-026 — Actual vs Predicted visualization
-
-Grafana должна визуально различать:
-
-```text
-Actual
-```
-
-и:
-
-```text
-Predicted
-```
-
-Например:
+Grafana должна визуально различать Actual и Predicted, например:
 
 ```text
 Accuracy
@@ -1066,9 +1076,7 @@ predicted:
 
 Конкретный дизайн dashboard определяется BE/DevOps, но semantics должны быть сохранены.
 
----
-
-# 32. BE-027 — Grafana embedding
+### Grafana embedding
 
 Grafana Dashboard должен быть доступен frontend через iframe.
 
@@ -1093,29 +1101,15 @@ http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
 VITE_GRAFANA_DASHBOARD_URL=...
 ```
 
----
+### Backend Dockerization
 
-# 33. BE-028 — Backend Dockerization
+Backend должен иметь Dockerfile. Docker Compose должен позволять запустить
+backend вместе с InfluxDB и Grafana. Backend должен получать конфигурацию через
+environment variables. Secrets не должны быть hardcoded в Python code.
 
-Backend должен иметь Dockerfile.
-
-Docker Compose должен позволять запустить backend вместе с:
-
-```text
-InfluxDB
-Grafana
-```
-
-Backend должен получать конфигурацию через environment variables.
-
-Secrets не должны быть hardcoded в Python code.
-
----
-
-# 34. BE-029 — Docker networking
+### Docker networking
 
 Backend, InfluxDB и Grafana должны находиться в одной Docker network.
-
 Внутри Docker network использовать service names.
 
 Например:
@@ -1128,13 +1122,11 @@ grafana -> http://influxdb:8086
 Frontend, запущенный отдельно через Vite, использует host-facing URL:
 
 ```text
-http://localhost:<backend-port>
+http://localhost:<backend_port>
 http://localhost:3000
 ```
 
----
-
-# 35. BE-030 — CORS
+### CORS
 
 Backend должен разрешать frontend origin для локальной разработки.
 
@@ -1148,55 +1140,13 @@ CORS не должен без необходимости разрешать лю
 
 ---
 
-# 36. BE-031 — Health endpoint
+## 16. Тестирование
 
-Реализовать:
-
-```http
-GET /health
-```
-
-Минимальный response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-Endpoint используется для проверки доступности backend.
-
----
-
-# 37. BE-032 — API documentation
-
-FastAPI должен предоставлять OpenAPI/Swagger.
-
-Минимальные endpoint'ы:
-
-```http
-GET /api/model -> Возвращает конфигурацию из comparison.json + current_configuration из data/model.json (User Buffer)
-POST /api/predict -> Считает + пишет в data/model.json + InfluxDB
-POST /api/reset -> Читает comparison.json -> пишет в model.json -> возвращает baseline (в формате PredictionResponse)
-GET /health -> heathcheck
-```
-
-Опционально:
-
-```http
-GET /api/experiments -> Список прогонов из data/experiments/ (для истории в UI)
-GET /api/experiments/{experiment_id} -> Доступ к конкретному эксперименту из списка по id.
-```
-
-Но frontend MVP не должен зависеть от этих endpoint'ов.
-
----
-
-# 38. BE-033 — Unit tests
+### Unit tests
 
 Необходимо покрыть:
 
-## Experiment validation
+**Experiment validation**
 
 ```text
 valid experiment -> accepted
@@ -1205,7 +1155,7 @@ missing required field -> rejected
 invalid metric -> rejected
 ```
 
-## Predictor
+**Predictor**
 
 ```text
 baseline -> baseline result
@@ -1213,7 +1163,7 @@ parameter change -> expected metric change
 multiple parameter changes -> combined result
 ```
 
-## Constraints
+**Constraints**
 
 ```text
 accuracy >= 0
@@ -1224,7 +1174,7 @@ latency >= 0
 memory >= 0
 ```
 
-## API
+**API**
 
 ```text
 GET /api/model -> 200
@@ -1233,7 +1183,7 @@ invalid request -> 4xx
 GET /health -> 200
 ```
 
-## Persistence
+**Persistence**
 
 ```text
 POST /api/predict
@@ -1243,13 +1193,11 @@ POST /api/predict
     +-> prediction written to InfluxDB
 ```
 
----
-
-# 39. BE-034 — Integration test
+### Integration tests
 
 Необходимо проверить полный pipeline.
 
-## Actual pipeline
+**Actual pipeline**
 
 ```text
 experiment JSON
@@ -1267,7 +1215,7 @@ InfluxDB
 Grafana
 ```
 
-## Interactive pipeline
+**Interactive pipeline**
 
 ```text
 POST /api/predict
@@ -1284,9 +1232,7 @@ InfluxDB
 Grafana
 ```
 
-Основной критерий:
-
-После вызова `/api/predict` prediction должна:
+Основной критерий: после вызова `/api/predict` prediction должна:
 
 1. быть рассчитана;
 2. вернуться frontend;
@@ -1295,7 +1241,7 @@ Grafana
 
 ---
 
-# 40. BE-035 — README / Developer setup
+## 17. Developer setup (README)
 
 README должен описывать полный локальный сценарий.
 
@@ -1306,9 +1252,7 @@ git clone <repository>
 
 # configure .env
 
-docker-compose up -d
-
-python ingest.py comparison.json
+docker-compose up -d --build
 ```
 
 После запуска:
@@ -1321,10 +1265,7 @@ Grafana:
 http://localhost:3000
 
 Backend:
-http://localhost:<backend-port>
-
-Swagger:
-http://localhost:<backend-port>/docs
+http://localhost:<backend_port>
 ```
 
 README должен содержать:
@@ -1342,11 +1283,9 @@ README должен содержать:
 
 ---
 
-# 41. BE-036 — Final MVP flow
+## 18. Целевой сценарий работы MVP
 
-Полностью рабочая система должна поддерживать следующий сценарий.
-
-## Initial setup
+### Initial setup
 
 ```text
 docker-compose up -d
@@ -1358,31 +1297,22 @@ docker-compose up -d
 Backend
 InfluxDB
 Grafana
+Frontend
 ```
 
-Затем:
+Затем (ПРИ НЕОБХОДИМОСТИ ОБНОВЛЕНИЯ ДАННЫХ, при первом запуске не требуется):
 
 ```text
 python ingest.py comparison.json
 ```
 
-Actual experiment data попадает в InfluxDB.
+Actual experiment data попадает в InfluxDB. Grafana показывает full и compressed data.
 
-Grafana показывает baseline/actual data.
-
----
-
-## Interactive flow
+### Interactive flow
 
 Пользователь открывает frontend.
 
-Frontend получает:
-
-```http
-GET /api/model
-```
-
-и строит sliders.
+Frontend получает `GET /api/model` и строит sliders.
 
 Пользователь меняет:
 
@@ -1391,11 +1321,7 @@ param_a:
 0.82 -> 0.76
 ```
 
-Frontend отправляет:
-
-```http
-POST /api/predict
-```
+Frontend отправляет `POST /api/predict`.
 
 Backend:
 
@@ -1415,69 +1341,11 @@ HTTP response           InfluxDB
 ```
 
 Frontend получает prediction и показывает её непосредственно.
-
 Grafana получает тот же prediction через InfluxDB и отображает его в dashboard.
 
 ---
 
-# 42. BE-037 — Source of truth
-
-Необходимо явно разделять:
-
-### Actual
-
-Фактически измерено black box.
-
-```text
-source:
-black box
-```
-
-### Predicted
-
-Рассчитано backend predictor.
-
-```text
-source:
-surrogate model
-```
-
-Prediction никогда не должна выдаваться за результат реального black-box запуска.
-
----
-
-# 43. BE-038 — Architecture extensibility
-
-MVP predictor — `SensitivityPredictor`.
-
-Но API и внутренняя архитектура должны позволять в будущем использовать:
-
-```text
-SensitivityPredictor
-InterpolationPredictor
-GaussianProcessPredictor
-MLSurrogatePredictor
-```
-
-Frontend не должен знать, какой predictor используется.
-
-Frontend получает:
-
-```text
-prediction_mode
-```
-
-например:
-
-```text
-sensitivity_model
-interpolation
-surrogate_ml
-```
-
----
-
-# 44. BE-039 — MVP Definition of Done
+## 19. Definition of Done
 
 Backend/DevOps MVP считается готовым, если:
 
