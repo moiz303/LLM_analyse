@@ -53,6 +53,24 @@ def _as_float(value: Any) -> float | None:
     return None
 
 
+def _is_meaningful(value: Any) -> bool:
+    """True when a harvested raw value actually carries information.
+
+    ``None``, empty strings and placeholder tokens such as "N/A" mean "this
+    section simply did not measure the parameter"; they must not be confused
+    with genuine string values (``quantization_method="nf4"``) that we now
+    keep instead of silently dropping them.
+    """
+    if value is None:
+        return False
+    if isinstance(value, str):
+        text = value.strip()
+        return bool(text) and text.lower() not in _SKIP_MARKERS
+    if isinstance(value, float):
+        return math.isfinite(value)
+    return isinstance(value, (int, bool, str))
+
+
 def _json_number(value: float | None) -> float | None:
     """Encode an unknown (None) numeric as NaN so JSON writers emit ``null``.
 
@@ -88,16 +106,39 @@ def normalize_metric_name(param: str) -> str:
 
 
 def _pick_experiment(payload: dict[str, Any]) -> dict[str, Any] | None:
-    """Return the black box experiment to convert, or None for a legacy document."""
-    experiments = payload.get("experiments")
-    if not isinstance(experiments, list) or not experiments:
-        return None
-    candidates = [item for item in experiments if isinstance(item, dict)]
+    """Return the black box experiment that becomes model.json, or None for a legacy document.
+
+    The contract with the frontend/black box team: ``model.json`` always keeps
+    **the first experiment in the file** (``payload["experiments"][0]``), while
+    every other run is archived into ``data/experiments/`` by
+    :func:`split_black_box_payload`.  When the first entry carries no usable
+    content at all (no metrics and no parameters), fall back to the most
+    complete run so the API never serves an empty model.
+    """
+    candidates = _all_experiments(payload)
     if not candidates:
         return None
-    # The black box appends runs chronologically; the latest run is the anchor.
-    candidates.sort(key=lambda item: str(item.get("timestamp") or ""))
-    return candidates[-1]
+    primary = candidates[0]
+    if _experiment_has_content(primary):
+        return primary
+    richest = max(candidates, key=_experiment_content_score)
+    return richest if _experiment_has_content(richest) else primary
+
+
+def _experiment_content_score(experiment: dict[str, Any]) -> int:
+    score = 0
+    metrics = experiment.get("metrics")
+    if isinstance(metrics, list):
+        score += sum(1 for item in metrics if isinstance(item, dict))
+    for section in ("configuration", "critical_parameters", "baseline_values"):
+        value = experiment.get(section)
+        if isinstance(value, dict):
+            score += len(value)
+    return score
+
+
+def _experiment_has_content(experiment: dict[str, Any]) -> bool:
+    return _experiment_content_score(experiment) > 0
 
 
 def _all_experiments(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -243,20 +284,39 @@ class _ParameterCollector:
                     record["unbounded_max"] = True
 
         # Resolve values: prefer configuration, then critical wrapper, then
-        # baseline snapshot.  Keep only parameters whose resolved value is a
-        # number (booleans included); everything else (paths, commits, tensor
-        # type strings) is descriptive metadata, not a slider.
+        # baseline snapshot.  Numeric parameters become sliders; non-numeric
+        # ones (quantization_method, tensor types, commits, ...) are NOT
+        # dropped any more — they are kept as categorical/string entries so
+        # the parameter count matches the source file.  Only parameters whose
+        # value is missing entirely (null/"N/A" everywhere) or that are pure
+        # containers without scalar leaves are skipped.
         resolved: dict[str, dict[str, Any]] = {}
         for name, record in params.items():
-            chosen = None
+            raw_value = None
+            declared = record.get("declared_type")
             for source in ("configuration", "critical", "baseline"):
-                number = _as_float(record["values"].get(source))
-                if number is not None:
-                    chosen = number
+                candidate = record["values"].get(source)
+                if _is_meaningful(candidate):
+                    raw_value = candidate
                     break
-            if chosen is None:
+            if raw_value is None:
                 continue
-            resolved[name] = {**record, "value": chosen}
+            entry = {**record, "raw_value": raw_value}
+            number = _as_float(raw_value)
+            if number is not None and not (declared == "string"):
+                entry["value"] = number
+                entry["kind"] = "number"
+            elif isinstance(raw_value, bool) or declared == "boolean":
+                entry["value"] = float(bool(raw_value))
+                entry["kind"] = "boolean"
+            else:
+                text = str(raw_value).strip()
+                if not text:
+                    continue
+                entry["value"] = None
+                entry["kind"] = "string"
+                entry["text"] = text
+            resolved[name] = entry
         return resolved
 
     def _walk_mapping(
@@ -412,12 +472,20 @@ def convert_black_box_experiment(
     params = collector.collect(experiment)
 
     names = sorted(params)
-    configuration = {name: params[name]["value"] for name in names}
+    configuration = {name: params[name]["value"] for name in names if params[name]["kind"] != "string"}
     critical_parameters: dict[str, dict[str, Any]] = {}
     for name in names:
         record = params[name]
         entry: dict[str, Any] = {"critical": bool(record.get("critical", False))}
         entry["baseline"] = record["value"]
+        if record.get("declared_type"):
+            entry["type"] = record["declared_type"]
+        entry["kind"] = record["kind"]
+        if record["kind"] == "string":
+            # Non-numeric parameter: kept for completeness of the parameter
+            # list (and visible to the UI as a fixed value), but it never
+            # enters the numeric slider contract.
+            entry["value"] = record["text"]
         bounds = record.get("bounds", {})
         if "min" in bounds:
             entry["min"] = bounds["min"]
@@ -450,7 +518,7 @@ def convert_black_box_experiment(
 def preprocess_raw_payload(payload: Any) -> Any:
     """Backend entry point: normalize any accepted input to the comparison shape.
 
-    * dict containing ``experiments`` -> convert the latest black box run;
+    * dict containing ``experiments`` -> convert the **first** black box run;
     * anything else (already canonical comparison.json) -> returned unchanged.
     """
     if not isinstance(payload, dict):
@@ -461,12 +529,35 @@ def preprocess_raw_payload(payload: Any) -> Any:
     return convert_black_box_experiment(experiment, siblings=_all_experiments(payload))
 
 
+def split_black_box_payload(payload: Any) -> list[dict[str, Any]]:
+    """Convert **every** experiment of a black box document, in file order.
+
+    Returns one comparison-shaped dict per run; the first element corresponds
+    to ``payload["experiments"][0]`` and is what model.json receives, while the
+    remaining runs are archived into ``data/experiments/`` by the store.  Each
+    run still sees all sibling runs, so missing metric sides are recovered from
+    other experiments of the same document.  Legacy/canonical documents yield
+    an empty list (nothing to split).
+    """
+    if not isinstance(payload, dict):
+        return []
+    experiments = _all_experiments(payload)
+    if not experiments:
+        return []
+    schema = load_cached_schema("black_box_experiments_schema.json")
+    return [
+        convert_black_box_experiment(experiment, siblings=experiments, schema=schema)
+        for experiment in experiments
+    ]
+
+
 __all__ = [
     "convert_black_box_experiment",
     "flatten_parameter_name",
     "is_black_box_payload",
     "load_comparison_schema",
     "preprocess_raw_payload",
+    "split_black_box_payload",
 ]
 
 
