@@ -499,23 +499,30 @@ prediction_mode=sensitivity_model
 
 Backend пишет все точки в один measurement `metric_results`:
 
-| Тег               | Значения                                    | Назначение                              |
-|-------------------|---------------------------------------------|-----------------------------------------|
-| `model_id`        | из `meta.model_id`                          | идентификатор модели                    |
-| `experiment_id`   | id эксперимента / `interactive` для predict | связь с историей                        |
-| `result_type`     | `actual` / `predicted`                      | разделение измеренного и предсказанного |
-| `prediction_mode` | `black_box` / `sensitivity_model`           | источник значения                       |
-| `model_type`      | `full` / `compressed` / `predicted`         | какая модель описана точкой             |
-| `support_level`   | `high` / `medium` / `low`                   | только у predicted-точек                |
+| Тег               | Значения                                    | Назначение                                                  |
+|-------------------|---------------------------------------------|-------------------------------------------------------------|
+| `model_id`        | из `meta.model_id`                          | идентификатор модели                                        |
+| `experiment_id`   | id эксперимента / `interactive` для predict | связь с историей                                            |
+| `result_type`     | `actual` / `predicted`                      | разделение измеренного и предсказанного                     |
+| `prediction_mode` | `black_box` / `sensitivity_model`           | источник значения                                           |
+| `model_type`      | `full` / `compressed` / `predicted`         | какая модель описана точкой                                 |
+| `support_level`   | `high` / `medium` / `low`                   | только у predicted-точек                                    |
+| `cfg_<param>`     | значение параметра конфигурации             | только у predicted-точек; фильтр реактивной серии в Grafana |
 
 Каждая точка содержит поля — по одному на каждую метрику (`accuracy_top1`,
 `latency_ms` и т.д.). Actual-данные пишутся двумя точками (full и compressed)
 со временем из `meta.timestamp`; prediction — одной точкой с текущим временем.
 
-> Примечание: два panel-запроса dashboard («Support пользовательской модели» и
-> «История support») обращаются к measurement `model_results` и полю
-> `support_score`, которые backend не записывает — эти panels будут пустыми,
-> пока dashboard или backend не будут приведены к единой схеме.
+> Дашборд `model-comparison` намеренно содержит ровно две панели: таблицу
+> экспериментов (группировка по `_time`) и timeseries выбранной метрики, где
+> рядом с сериями `full`/`compressed` рисуется реактивная серия `predicted`.
+> Панели про support удалены (backend не пишет `model_results`/`support_score`).
+> Выбор параметра для реактивной серии приходит из dropdown-переменных
+> `param_name` / `param_value` (плюс `metric_choice`); фронт пробрасывает их в
+> iframe через `var-param_name=&var-param_value=`, а обновление дашборда идёт по
+> событию (postMessage `refresh-dashboard` после каждого /api/predict), поэтому
+> автополлинг выключен (`refresh: ""`). Значения `cfg_*` нормализуются до двух
+> знаков — ровно как шаг ползунка на фронте.
 
 Grafana и backend подключаются к InfluxDB по внутреннему адресу
 `INFLUXDB_URL`, например `http://influxdb:8086`. Браузер использует

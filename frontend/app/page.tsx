@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import GrafanaDashboard from '../components/GrafanaDashboard/GrafanaDashboard'
+import GrafanaDashboard, { requestGrafanaRefresh } from '../components/GrafanaDashboard/GrafanaDashboard'
 import {
   Activity,
   AlertTriangle,
@@ -129,7 +129,12 @@ export default function Page() {
       const response = await fetch(`${API_URL}/api/predict`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parameters: nextConfig }) })
       const body = await response.json()
       if (!response.ok) throw new Error(body.detail || 'Не удалось получить прогноз')
-      if (id === requestId.current) setPrediction(sanitizePrediction(body))
+      if (id === requestId.current) {
+        setPrediction(sanitizePrediction(body))
+        // Данные уже записаны в Influx на бэкенде — мгновенно обновляем дашборд
+        // вместо поллинга раз в 10 секунд (см. refresh: "" в provisioning).
+        requestGrafanaRefresh(GRAFANA_URL)
+      }
     } catch (err) { if (id === requestId.current) setError(err instanceof Error ? err.message : 'Не удалось получить прогноз') }
     finally { if (id === requestId.current) setCalculating(false) }
   }, [])
@@ -237,7 +242,7 @@ export default function Page() {
           <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><p className="eyebrow">Сохранённые запуски</p><h3>История экспериментов</h3></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${selectedExperiment?.experiment_id === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Метка времени недоступна'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}<small>compressed</small></div><ChevronRight /></button>) : <div className="empty-state"><History /> Сохранённых экспериментов пока нет</div>}{selectedExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity /> Фактические метрики {selectedExperiment.experiment_id} (измеренный запуск)</div><div className="actual-reference-grid">{Object.entries(selectedExperiment.metrics).map(([name, value]) => { const predicted = prediction?.prediction[name]; return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong><span className="predicted-ref">pred {formatValue(predicted, name)}</span></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><p className="eyebrow">Суррогатная модель</p><h3>Точность прогноза</h3></div><Gauge /></div><div className={`support-level ${(prediction?.support?.level || 'unknown').toLowerCase()}`}>{prediction?.support?.level || 'pending'}</div>{prediction?.support?.level?.toLowerCase() === 'low' && <div className="support-warning"><AlertTriangle /> Низкая поддержка: относитесь к этому прогнозу как к оценке за пределами надёжного покрытия экспериментами.</div>}<p className="muted">Уровень поддержки текущей конфигурации существующими экспериментами</p><div className="support-meta"><span>Ближайший эксперимент</span><strong>{prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Разница</span><strong>{prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
           {/* Секция Grafana: iframe вынесен в отдельный компонент (см.
               components/GrafanaDashboard), URL — только из environment. */}
-          <section className="grafana-section panel"><div className="card-heading"><div><p className="eyebrow">Наглядно</p><h3>Полная и сжатая модели </h3></div><div className="grafana-label"><Activity /> Grafana live</div></div><GrafanaDashboard url={GRAFANA_URL} /></section>
+          <section className="grafana-section panel"><div className="card-heading"><div><p className="eyebrow">Наглядно</p><h3>Полная и сжатая модели </h3></div><div className="grafana-label"><Activity /> Grafana live</div></div><GrafanaDashboard url={GRAFANA_URL} paramName={selectedParam || model?.parameters[0]?.name} paramValue={selectedParam ? config[selectedParam] ?? null : model?.parameters[0] ? config[model.parameters[0].name] ?? null : null} metric={activeMetrics[0]?.name} /></section>
         </section>
       </div>
       <footer><span><Clock3 /> Прогнозы backend сохраняются автоматически</span><span>API · {API_URL.replace(/^https?:\/\//, '')}</span></footer>
