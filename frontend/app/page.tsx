@@ -59,6 +59,12 @@ function metricTone(metric: Metric, prediction?: number | null, baseline?: numbe
   const distance = Math.abs(p - b) / (Math.abs(b) || 1)
   return better || distance < 0.01 ? 'good' : distance < 0.05 ? 'warn' : 'bad'
 }
+// Тон карточки с учётом режима «фактический замер»: зелёная рамка подсказывает,
+// что показаны измеренные метрики выбранного эксперимента, а не прогноз модели.
+function displayTone(metric: Metric, predicted: number | null, base: number | null, isActual: boolean) {
+  const tone = metricTone(metric, predicted, base)
+  return isActual ? `${tone} actual` : tone
+}
 // Ширина полосы: safe-отношение двух чисел с null (нет замера -> минимальная полоса).
 function barWidth(value: number | null | undefined, total: number | null | undefined, min = 8) {
   const v = num(value); const t = num(total)
@@ -93,6 +99,12 @@ export default function Page() {
   const [calculating, setCalculating] = useState(false)
   const [error, setError] = useState('')
   const [selectedParam, setSelectedParam] = useState('')
+  const parameterRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const selectParameter = (name: string) => {
+    setSelectedParam(name)
+    // При выборе из рейтинга чувствительности прокрутить список параметров к выбранному
+    requestAnimationFrame(() => parameterRefs.current[name]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
+  }
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
   const requestId = useRef(0)
 
@@ -152,8 +164,48 @@ export default function Page() {
   const applyExperiment = (experiment: Experiment) => {
     setSelectedExperiment(experiment)
     setConfig({ ...experiment.configuration })
+    // Мгновенно перестраиваем карточки «Оценка качества модели одним взглядом»
+    // на фактические метрики выбранного запуска, не дожидаясь ответа /api/predict.
+    // Эксперимент — это реальный замер в данной конфигурации, поэтому он и есть
+    // наиболее точное значение прогноза; суррогатная модель позже лишь подтвердит его.
+    if (Object.keys(experiment.metrics).length) {
+      setPrediction((current) => current
+        ? { ...current, prediction: { ...current.prediction, ...experiment.metrics }, configuration: { ...experiment.configuration } }
+        : current)
+    }
     void predict({ ...experiment.configuration })
   }
+
+  // Фиксируем выбранный эксперимент на момент последнего ответа /api/predict.
+  // Пока пользователь двигает слайдеры (config !== конфигурация эксперимента),
+  // карточки снова показывают прогноз суррогатной модели для текущей конфигурации.
+  useEffect(() => {
+    if (!prediction || !selectedExperiment) return
+    const sameAsExperiment = Object.entries(selectedExperiment.configuration)
+      .every(([key, value]) => num(prediction.configuration?.[key]) === value)
+    if (!sameAsExperiment) setSelectedExperiment(null)
+  }, [prediction, selectedExperiment])
+
+  // Активные метрики для блока «одним взглядом»: при выборе эксперимента берём
+  // полный набор из experiment.metrics (в model.json могут отсутствовать метрики,
+  // добавленные бэкендом на этапе preprocess), иначе — каталог модели.
+  const activeMetrics = useMemo<Metric[]>(() => {
+    if (!model) return []
+    if (!selectedExperiment) return model.metrics
+    const byName = new Map(model.metrics.map((m) => [m.name, m]))
+    return Object.entries(selectedExperiment.metrics).map(([name, value]) => {
+      const known = byName.get(name)
+      return {
+        name,
+        full: known?.full ?? null,
+        compressed: value ?? known?.compressed ?? null,
+        absolute_delta: known?.absolute_delta ?? null,
+        relative_delta: known?.relative_delta ?? null,
+        direction: known?.direction ?? 'higher_is_better',
+        kind: known?.kind,
+      }
+    })
+  }, [model, selectedExperiment])
 
   if (loading) return <main className="loading-screen"><div className="loader-mark"><Activity /></div><p>Подключение к лаборатории сжатия…</p></main>
 
@@ -169,18 +221,18 @@ export default function Page() {
           <div className="section-heading"><div><p className="eyebrow">Конфигурация</p><h2>Параметры модели</h2></div><SlidersHorizontal /></div>
           <p className="muted intro">Настройте профиль сжатия и наблюдайте прогноз суррогатной модели в реальном времени.</p>
           <div className="parameter-list">
-            {model?.parameters.map((parameter) => { const value = sliderValue(config[parameter.name], parameter.baseline); const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => setSelectedParam(parameter.name)}>
+            {model?.parameters.map((parameter) => { const value = sliderValue(config[parameter.name], parameter.baseline); const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => selectParameter(parameter.name)} ref={(el) => { parameterRefs.current[parameter.name] = el }}>
               <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">критический</span>}</div><strong>{value.toFixed(2)}</strong></div>
               <input aria-label={parameter.name} type="range" min={parameter.ui_range.min} max={parameter.ui_range.max} step="0.01" value={Math.min(Math.max(value, parameter.ui_range.min), parameter.ui_range.max)} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
               <div className="range-labels"><span>min {parameter.ui_range.min}</span><span>max {parameter.ui_range.max}</span></div>
               <div className="parameter-details"><span>Baseline <strong>{parameter.baseline.toFixed(2)}</strong></span><span>Current <strong>{value.toFixed(2)}</strong></span><span className={deltaClass(delta)}>Delta <strong>{delta === 0 ? '0.00' : `${delta > 0 ? '+' : ''}${delta.toFixed(2)}`}</strong></span></div>
             </div> })}
           </div>
-          <div className="sensitivity-box"><div className="box-title"><Target /> Рейтинг чувствительности</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => setSelectedParam(parameter.name)}><span className="rank">0{index + 1}</span><span>{parameter.name}</span><span className="sensitivity-score">{parameter.score.toFixed(3)} <ChevronRight /></span></button>)}</div>
+          <div className="sensitivity-box"><div className="box-title"><Target /> Рейтинг чувствительности</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => selectParameter(parameter.name)}><span className="rank">0{index + 1}</span><span>{parameter.name}</span><span className="sensitivity-score">{parameter.score.toFixed(3)} <ChevronRight /></span></button>)}</div>
         </aside>
         <section className="main-column">
           <div className="hero-row"><div><p className="eyebrow">{model?.model_id || 'Модель'} / Анализ в реальном времени</p><h2>Оценка качества модели <span>одним взглядом</span></h2></div><div className="calc-state">{calculating ? <><Loader2 className="spin" /> Расчёт</> : health === 'online' && prediction ? <><Check /> Синхронизировано с backend</> : <><AlertTriangle /> Ожидание backend</>}</div></div>
-          <div className="metric-grid">{model?.metrics.map((metric) => { const predicted = num(prediction?.prediction[metric.name]); const base = num(prediction?.baseline[metric.name] ?? model.baseline.metrics[metric.name]); const delta = predicted !== null && base !== null ? predicted - base : undefined; const tone = metricTone(metric, predicted, base); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">Прогноз</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${barWidth(predicted, base)}%` }} /></div></article> })}</div>
+          <div className="metric-grid">{activeMetrics.map((metric) => { const predicted = num(prediction?.prediction[metric.name] ?? (selectedExperiment ? selectedExperiment.metrics[metric.name] : undefined)); const base = num(prediction?.baseline[metric.name] ?? model?.baseline.metrics[metric.name] ?? metric.compressed); const delta = predicted !== null && base !== null ? predicted - base : undefined; const tone = displayTone(metric, predicted, base, Boolean(selectedExperiment)); return <article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head"><span>{prettyName(metric.name)}</span><span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">{selectedExperiment ? 'Фактический замер' : 'Прогноз'}</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—' : `${delta > 0 ? '+' : ''}${formatValue(delta, metric.name)}`}</span></div><div className="metric-bar"><span style={{ width: `${barWidth(predicted, base)}%` }} /></div></article> })}</div>
           <div className="compare-card panel"><div className="card-heading"><div><p className="eyebrow">Сравнение с исходной моделью</p><h3>Оригинал <span>vs</span> сжатая</h3></div><div className="legend"><span className="legend-dot actual" /> Сжатая версия <span className="legend-dot predicted" /> Прогноз</div></div><div className="comparison-table">{model?.metrics.map((metric) => <div className="comparison-row" key={metric.name}><span className="comparison-name">{prettyName(metric.name)}</span><div className="comparison-line"><span className="line-fill" style={{ width: `${barWidth(Math.abs(num(metric.compressed) ?? 0), Math.abs(num(metric.full) ?? 0), 12)}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(metric.compressed, metric.name)}</span><span className="full-value">{formatValue(metric.full, metric.name)} full</span></div>)}</div></div>
           <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><p className="eyebrow">Сохранённые запуски</p><h3>История экспериментов</h3></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${selectedExperiment?.experiment_id === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Метка времени недоступна'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}<small>compressed</small></div><ChevronRight /></button>) : <div className="empty-state"><History /> Сохранённых экспериментов пока нет</div>}{selectedExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity /> Фактические метрики {selectedExperiment.experiment_id} (измеренный запуск)</div><div className="actual-reference-grid">{Object.entries(selectedExperiment.metrics).map(([name, value]) => { const predicted = prediction?.prediction[name]; return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong><span className="predicted-ref">pred {formatValue(predicted, name)}</span></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><p className="eyebrow">Суррогатная модель</p><h3>Точность прогноза</h3></div><Gauge /></div><div className={`support-level ${(prediction?.support?.level || 'unknown').toLowerCase()}`}>{prediction?.support?.level || 'pending'}</div>{prediction?.support?.level?.toLowerCase() === 'low' && <div className="support-warning"><AlertTriangle /> Низкая поддержка: относитесь к этому прогнозу как к оценке за пределами надёжного покрытия экспериментами.</div>}<p className="muted">Уровень поддержки текущей конфигурации существующими экспериментами</p><div className="support-meta"><span>Ближайший эксперимент</span><strong>{prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Разница</span><strong>{prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
           {/* Секция Grafana: iframe вынесен в отдельный компонент (см.
