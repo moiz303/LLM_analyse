@@ -243,7 +243,7 @@ Python на хост-системе для обычного запуска не 
 - InfluxDB: <http://localhost:8086>
 - Grafana: <http://localhost:3000>
 - Dashboard: <http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk>
-- Frontend (Next.js): <http://localhost:5173> (в контейнере - 3100)
+- Frontend (Next.js): <http://localhost:3100> (в контейнере - 3100)
 
 Frontend может использовать:
 
@@ -553,7 +553,7 @@ host-facing порты из `.env`.
 |--------------------|------------------------------|-----------------------|
 | `DATA_DIR`         | Каталог runtime-данных       | `data`                |
 | `COMPARISON_PATH`  | Путь к source-of-truth       | `comparison.json`     |
-| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:5173        |
+| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:3100        |
 
 ### InfluxDB
 
