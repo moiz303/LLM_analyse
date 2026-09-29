@@ -102,7 +102,7 @@ Frontend ── POST /api/predict ──> FastAPI ──> InfluxDB
 Проект намеренно разделяет три уровня хранения:
 
 - `comparison.json` — неизменяемый источник истины для baseline и Reset
-  (единственный файл данных, который хранится в Git);
+  (единственный файл данных, который не должен попадать в Git, за исключением уже активного мокового файла);
 - `model.json` — текущий buffer параметров пользователя; создаётся backend
   внутри контейнера (копируется из `comparison.json`) при первом запросе;
 - `data/experiments/` — snapshots экспериментов; заполняется ingest'ом при
@@ -162,16 +162,17 @@ Black box отдаёт результат по формату
 
 - Docker с Docker Compose;
 - доступный Docker daemon;
-- файл `comparison.json` в корне проекта.
+- файл `comparison.json`.
 
 Python на хост-системе для обычного запуска не требуется: backend и ingest
 работают внутри Docker-контейнера.
 
 ### Шаги
 
-1. Создайте локальный файл окружения:
+1. Стандартные первые шаги:
 
    ```bash
+   git clone <репозиторий>
    cp .env.example .env
    ```
 
@@ -219,7 +220,7 @@ Python на хост-системе для обычного запуска не 
    3. запишет actual-результаты в InfluxDB;
    4. запустит FastAPI.
 
-   Отдельно выполнять `python backend/ingest.py comparison.json` не нужно, эта команда встроена в запуск backend-контейнера (отличие от предыдущей версии).
+   Отдельно выполнять `python backend/ingest.py comparison.json` не нужно, эта команда встроена в запуск backend-контейнера.
 
 5. Проверьте статус контейнеров и автоматической загрузки:
 
@@ -231,7 +232,7 @@ Python на хост-системе для обычного запуска не 
    В логах backend должна появиться строка вида:
 
    ```text
-   Validated and ingested exp_xxx (...)
+   Validated and ingested file-xxx (N metrics)
    ```
 
 ### Адреса сервисов
@@ -243,7 +244,7 @@ Python на хост-системе для обычного запуска не 
 - InfluxDB: <http://localhost:8086>
 - Grafana: <http://localhost:3000>
 - Dashboard: <http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk>
-- Frontend (Next.js): <http://localhost:3100> (в контейнере - 3100)
+- Frontend (Next.js): <http://localhost:3100>
 
 Frontend может использовать:
 
@@ -262,10 +263,18 @@ NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model
 docker compose up -d
 ```
 
-При изменении Dockerfile или Python-кода:
+При изменении Dockerfile или кода:
 
 ```bash
 docker compose up -d --build
+```
+
+При необходимости не записи новых данных, а полного пересоздания базы InfluxDB:
+
+```bash
+docker compose down -v
+
+docker compose up -d
 ```
 
 ---
@@ -278,7 +287,7 @@ docker compose up -d --build
 ├── .gitignore
 ├── Dockerfile                           # образ FastAPI backend
 ├── docker-compose.yml                   # backend + InfluxDB + Grafana
-├── comparison.json                      # канонический baseline
+├── comparison.json                      # канонический baseline (в Git только mock)
 ├── backend/
 │   ├── app/
 │   │   ├── api/                         # HTTP-маршруты
