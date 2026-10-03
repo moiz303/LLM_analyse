@@ -68,7 +68,6 @@ services:
     environment:
       PORT: ${FRONTEND_CONTAINER_PORT:-3100}
       HOSTNAME: ${BACKEND_HOST:-0.0.0.0}
-      # Целевой адрес backend для серверного прокси /backend внутри сети compose.
       BACKEND_URL: ${FRONTEND_BACKEND_URL:-http://backend:${BACKEND_CONTAINER_PORT:-8000}}
     ports:
       - "${FRONTEND_PORT:-3100}:${FRONTEND_CONTAINER_PORT:-3100}"
