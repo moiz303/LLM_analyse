@@ -16,7 +16,7 @@ def metric_kind(name: str) -> str:
         return "quality"
     if any(token in lowered for token in ("latency", "time", "duration")):
         return "latency"
-    if any(token in lowered for token in ("memory", "ram", "vram")):
+    if any(token in lowered for token in ("memory", "ram", "vram", "size")):
         return "memory"
     return "generic"
 
@@ -119,6 +119,14 @@ def normalize_experiment_payload(payload: dict[str, Any], fallback_id: str = "co
         meta["model_id"] = payload.get("model_id") or "demo_model_v1"
 
     for name, definition in normalized["critical_parameters"].items():
-        if name not in normalized["configuration"] and "baseline" in definition:
-            normalized["configuration"][name] = definition["baseline"]
+        if not isinstance(definition, dict):
+            continue
+        baseline = definition.get("baseline")
+        if name not in normalized["configuration"] and baseline is not None:
+            normalized["configuration"][name] = baseline
+        # Non-numeric (string/categorical) parameters are descriptive only; they
+        # live in critical_parameters but never enter the numeric configuration.
+    normalized["configuration"] = {
+        key: value for key, value in normalized["configuration"].items() if value is not None
+    }
     return normalized

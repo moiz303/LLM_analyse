@@ -1,10 +1,8 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Демонстрация сжатия',
-  description: 'Интерактивный анализ и лаборатория прогнозов сжатия моделей.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -42,7 +40,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className="antialiased">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {}
       </body>
     </html>
   )
