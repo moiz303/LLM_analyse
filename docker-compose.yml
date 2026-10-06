@@ -12,6 +12,7 @@ services:
       BACKEND_CONTAINER_PORT: ${BACKEND_CONTAINER_PORT}
       INFLUXDB_URL: ${INFLUXDB_URL}
       DATA_DIR: /app/data
+      SCHEMAS_DIR: /app/schemas
       COMPARISON_PATH: /app/comparison.json
       MODEL_PATH: /app/data/model.json
       EXPERIMENTS_DIR: /app/data/experiments
@@ -24,6 +25,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./comparison.json:/app/comparison.json:ro
+      - ./schemas:/app/schemas:ro
     depends_on:
       influxdb:
         condition: service_healthy
@@ -65,8 +67,7 @@ services:
         NEXT_PUBLIC_GRAFANA_DASHBOARD_URL: ${NEXT_PUBLIC_GRAFANA_DASHBOARD_URL:-http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk}
     environment:
       PORT: ${FRONTEND_CONTAINER_PORT:-3100}
-      HOSTNAME: 0.0.0.0
-      # Целевой адрес backend для серверного прокси /backend внутри сети compose.
+      HOSTNAME: ${BACKEND_HOST:-0.0.0.0}
       BACKEND_URL: ${FRONTEND_BACKEND_URL:-http://backend:${BACKEND_CONTAINER_PORT:-8000}}
     ports:
       - "${FRONTEND_PORT:-3100}:${FRONTEND_CONTAINER_PORT:-3100}"

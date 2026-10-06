@@ -31,9 +31,13 @@ class ModelService:
         parameters: list[ParameterDefinition] = []
         for name in parameter_names:
             definition = dict(experiment.critical_parameters.get(name) or {})
-            baseline = float(
-                experiment.configuration.get(name, definition.get("baseline", 0.0))
-            )
+            raw_baseline = experiment.configuration.get(name, definition.get("baseline", 0.0))
+            if raw_baseline is None:
+                # Non-numeric (string/categorical) parameter: it is part of the
+                # model description but has no slider semantics; skip it from
+                # the numeric contract while keeping it in critical_parameters.
+                continue
+            baseline = float(raw_baseline)
             ui_min = float(definition.get("min", baseline - max(abs(baseline) * 0.25, 0.01)))
             ui_max = float(definition.get("max", baseline + max(abs(baseline) * 0.25, 0.01)))
             if ui_min > ui_max:

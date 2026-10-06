@@ -1,14 +1,20 @@
-# Frontend MVP — Interactive Model Compression Demo
+# Frontend — техническая документация
+
+> **Рабочая ветка:** `frontend` — вся разработка интерфейса ведётся в этой ветке репозитория.
+
+Интерактивное демо для исследования влияния параметров сжатия модели на её
+характеристики. Документация описывает архитектуру, контракты API и требования
+к UI frontend-части проекта.
 
 > **Важно:** все контракты API в этом документе соответствуют фактической
 > реализации backend в репозитории (`backend/app`). Backend уже написан,
-> протестирован и отлажен — frontend должен стыковаться с ним как есть,
-> без ожиданий других форматов ответов. Актуальное описание API также
-> приведено в `README.md`, раздел «API».
+> протестирован и отлажен — frontend стыкуется с ним как есть, без ожиданий
+> других форматов ответов. Актуальное описание API также приведено в
+> `README.md`, раздел «API».
 
-## 1. Цель
+---
 
-Необходимо реализовать frontend интерактивного демо для исследования влияния изменения параметров модели на её характеристики.
+## 1. Назначение и границы ответственности
 
 Пользователь должен иметь возможность:
 
@@ -19,22 +25,23 @@
 5. увидеть результат prediction в интерфейсе;
 6. видеть Grafana Dashboard с историей/визуализацией результатов.
 
-Frontend не выполняет вычисления модели самостоятельно.
+Границы ответственности (что frontend **не** делает):
 
-Frontend не работает напрямую с InfluxDB.
-
-Frontend не использует Grafana API.
+* не выполняет вычисления модели самостоятельно;
+* не работает напрямую с InfluxDB;
+* не использует Grafana API;
+* не хранит credentials InfluxDB/Grafana.
 
 Вся логика расчёта влияния параметров находится на backend.
 
 ---
 
-# 2. Архитектура
+## 2. Архитектура
 
 Общий поток данных:
 
 ```text
-                         BLACK BOX
+                         BLACK BOX (Kaggle)
                              |
                              | experiment data
                              v
@@ -72,58 +79,18 @@ Frontend не должен знать, каким образом backend:
 
 ---
 
-# 3. Подготовка окружения
+## 3. Стек и структура проекта
 
-Frontend-разработчику необходимо:
-
-```bash
-git clone <repository>
-cp .env.example .env        # необходимо заполнить INFLUXDB_TOKEN
-docker compose up -d --build
-```
-
-Ingest actual-данных (`comparison.json -> InfluxDB`) выполняется
-**автоматически** при старте backend-контейнера. Отдельно запускать
-`ingest.py` не нужно (он требуется только для ручной перезагрузки файлов).
-
-Также это описано в `README.md`, раздел «Быстрый старт», рекомендован к ознакомлению.
-
-После этого инфраструктура доступна локально (стандартные значения из `.env.example`):
-
-```text
-InfluxDB -> http://localhost:8086
-Grafana  -> http://localhost:3000
-Backend  -> http://localhost:8000
-```
-
-Настройка credentials и `.env` выполняется согласно README проекта.
-
-Frontend-разработчик не должен вручную:
-
-* устанавливать Grafana;
-* создавать Grafana datasource;
-* подключать InfluxDB к Grafana;
-* создавать Grafana Dashboard;
-* выполнять provisioning;
-* создавать InfluxDB bucket.
-
-Вся эта инфраструктура является ответственностью BE/DevOps.
-
----
-
-# 4. Frontend stack
-
-Использовать:
+Используемый стек:
 
 * React;
 * TypeScript;
 * Vite.
 
-Для графиков frontend может использовать Plotly, ECharts или другой согласованный charting library.
+Для графиков frontend может использовать Plotly, ECharts или другую
+согласованную charting library.
 
----
-
-# 5. Рекомендуемая структура
+Рекомендуемая структура:
 
 ```text
 frontend/
@@ -156,7 +123,47 @@ frontend/
 
 ---
 
-# 6. Environment variables
+## 4. Окружение и подготовка
+
+Frontend-разработчику необходимо:
+
+```bash
+git clone <repository>
+cp .env.example .env        # необходимо заполнить INFLUXDB_TOKEN и при необходимости задать недефолтные пароли на Grafana и InfluxDB
+docker compose up -d --build
+```
+
+Ingest actual-данных (`comparison.json -> InfluxDB`) выполняется
+**автоматически** при старте backend-контейнера. Отдельно запускать
+`ingest.py` не нужно (он требуется только для ручной перезагрузки файлов).
+
+Также это описано в `README.md`, раздел «Быстрый старт», рекомендован к ознакомлению.
+
+После этого инфраструктура доступна локально (стандартные значения из `.env.example`):
+
+```text
+InfluxDB -> http://localhost:8086
+Grafana  -> http://localhost:3000
+Backend  -> http://localhost:8000
+Frontend -> http://localhost:5173
+```
+
+Настройка credentials и `.env` выполняется согласно README проекта.
+
+Frontend-разработчик не должен вручную:
+
+* устанавливать Grafana;
+* создавать Grafana datasource;
+* подключать InfluxDB к Grafana;
+* создавать Grafana Dashboard;
+* выполнять provisioning;
+* создавать InfluxDB bucket.
+
+Вся эта инфраструктура является ответственностью BE/DevOps.
+
+---
+
+## 5. Переменные окружения
 
 Frontend не должен хардкодить URL backend и Grafana.
 
@@ -183,7 +190,7 @@ Frontend не должен получать credentials InfluxDB или Grafana.
 
 ---
 
-# 7. Backend API
+## 6. Обзор Backend API
 
 В MVP frontend использует следующие endpoint'ы:
 
@@ -194,7 +201,7 @@ POST /api/reset
 GET  /health
 ```
 
-Дополнительно, для истории экспериментов (см. раздел «Experiment History»):
+Дополнительно, для истории экспериментов (см. раздел 10):
 
 ```http
 GET  /api/experiments
@@ -208,13 +215,9 @@ Swagger/OpenAPI на backend намеренно отключены (`/docs` не
 
 ---
 
-# 8. GET /api/model
+## 7. Контракты API
 
-Endpoint:
-
-```http
-GET /api/model
-```
+### 7.1. GET /api/model
 
 Используется для получения конфигурации модели и текущего состояния.
 
@@ -336,51 +339,9 @@ GET /api/model
 
 Frontend не должен хардкодить список параметров и метрик.
 
----
+### 7.2. POST /api/predict
 
-# 9. Parameter Panel
-
-На основании `/api/model` автоматически создать UI для каждого элемента массива `parameters`.
-
-Для каждого параметра показать:
-
-* название (`name`);
-* slider с `min = ui_range.min`, `max = ui_range.max`;
-* minimum;
-* maximum;
-* текущий value (из `current_configuration[name]`);
-* baseline (`baseline`);
-* delta относительно baseline.
-
-Пример:
-
-```text
-Parameter A
-
-min ─────────●──────────── max
-             |
-            0.76
-
-Baseline: 0.82
-Current:  0.76
-Delta:   -0.06
-```
-
-Список параметров не должен быть зашит в React-коде.
-
----
-
-# 10. Parameter changes
-
-При изменении slider необходимо отправлять новую configuration на backend.
-
-Endpoint:
-
-```http
-POST /api/predict
-```
-
-Пример request:
+Request:
 
 ```json
 {
@@ -403,30 +364,7 @@ POST /api/predict
 Поэтому при каждом движении slider отправляйте **полный** объект конфигурации
 (все параметры сразу), а не только изменившийся.
 
-Ползунки должны быть РЕАКТИВНЫМИ.
-- Изменение значения slider МГНОВЕННО триггерит `POST /api/predict`.
-- Пользователь видит изменение метрик и графиков в реальном времени при движении ползунка.
-- Loading state ("Calculating...") обязателен во время ожидания ответа от predict.
-
-Debounce для реакции slider-ов
-
-```text
-100–300 ms
-```
-
-Рекомендуется около 200 ms.
-
-Дополнительно рекомендуется отменять/игнорировать устаревшие ответы
-(AbortController или проверка последовательности запроса), чтобы при быстром
-движении ползунка на экран не попал «опоздавший» ответ.
-
----
-
-# 11. Prediction response
-
-Backend возвращает prediction.
-
-**Формат ответа (фактическая реализация backend):**
+Response:
 
 ```json
 {
@@ -489,9 +427,122 @@ Backend возвращает prediction.
 
 Frontend должен отображать prediction, не выполняя повторных вычислений.
 
+### 7.3. POST /api/reset
+
+Тело запроса не требуется.
+
+Поведение backend:
+
+1. принудительно перечитывает конфигурацию из `comparison.json`
+   (Source of Truth, а не из текущего буфера);
+2. перезаписывает буфер `data/model.json` исходными данными;
+3. выполняет prediction для baseline-конфигурации;
+4. возвращает **тот же формат, что и `POST /api/predict`** (`PredictionResponse`).
+
+Важно для frontend: `/api/reset` **не возвращает** заново `GET /api/model`.
+После успешного reset frontend должен:
+
+* установить все sliders в значения `response.configuration`
+  (это baseline-конфигурация);
+* обновить prediction-панель по ответу reset (для baseline предсказанные
+  метрики точно равны baseline-метрикам);
+* опционально выполнить повторный `GET /api/model`, если нужно обновить прочий UI.
+
+Это гарантирует, что пользователь всегда может вернуться к проверенной точке
+отсчета, даже если `data/model.json` был поврежден или изменен вручную.
+
+### 7.4. GET /api/experiments
+
+Ответ — **массив** объектов:
+
+```json
+[
+  {
+    "experiment_id": "exp_001",
+    "timestamp": "2026-09-15T10:00:00Z",
+    "configuration": { "param_a": 0.82, "param_b": 0.47, "param_c": 1.15 },
+    "metrics": {
+      "accuracy_top1": 0.7589,
+      "f1_macro": 0.7498,
+      "latency_ms": 12.8,
+      "memory_mb": 128.0
+    },
+    "model_id": "gemma_quantization_demo"
+  }
+]
+```
+
+Особенности:
+
+* `metrics` здесь — словарь `name -> compressed` (в отличие от массива в `GET /api/model`);
+* `timestamp` приходит в ISO-формате, но у отдельных snapshots может
+  отсутствовать — UI должен допускать отсутствие даты;
+* список может быть пустым (пока эксперименты не загружены);
+* записи упорядочены по имени файла.
+
+### 7.5. GET /health
+
+Используется для проверки доступности backend
+(например, для индикатора статуса системы в UI).
+
 ---
 
-# 12. Metric Cards
+## 8. Компоненты и поведение UI
+
+### 8.1. Parameter Panel
+
+На основании `/api/model` автоматически создать UI для каждого элемента массива `parameters`.
+
+Для каждого параметра показать:
+
+* название (`name`);
+* slider с `min = ui_range.min`, `max = ui_range.max`;
+* minimum;
+* maximum;
+* текущий value (из `current_configuration[name]`);
+* baseline (`baseline`);
+* delta относительно baseline.
+
+Пример:
+
+```text
+Parameter A
+
+min ─────────●──────────── max
+             |
+            0.76
+
+Baseline: 0.82
+Current:  0.76
+Delta:   -0.06
+```
+
+Список параметров не должен быть зашит в React-коде.
+
+### 8.2. Реактивность sliders
+
+При изменении slider необходимо отправлять новую configuration на backend
+(`POST /api/predict`, см. раздел 7.2).
+
+Ползунки должны быть РЕАКТИВНЫМИ:
+
+* изменение значения slider МГНОВЕННО триггерит `POST /api/predict`;
+* пользователь видит изменение метрик и графиков в реальном времени при движении ползунка;
+* loading state ("Calculating...") обязателен во время ожидания ответа от predict.
+
+Debounce для реакции slider-ов:
+
+```text
+100–300 ms
+```
+
+Рекомендуется около 200 ms.
+
+Дополнительно рекомендуется отменять/игнорировать устаревшие ответы
+(AbortController или проверка последовательности запроса), чтобы при быстром
+движении ползунка на экран не попал «опоздавший» ответ.
+
+### 8.3. Metric Cards
 
 Для основных metrics создать отдельные карточки по элементам массива `metrics`:
 
@@ -529,33 +580,16 @@ delta = `prediction[name] - baseline[name]`).
 
 Направление metric необходимо учитывать (`direction` из элемента `metrics`):
 
-Для:
+* для accuracy / f1 лучшее значение — больше (`higher_is_better`);
+* для latency / memory лучшее значение — меньше (`lower_is_better`).
 
-```text
-accuracy
-f1
-```
-
-лучшее значение — больше (`higher_is_better`).
-
-Для:
-
-```text
-latency
-memory
-```
-
-лучшее значение — меньше (`lower_is_better`).
-
----
-
-# 13. Baseline
+### 8.4. Baseline и Reset to baseline
 
 Baseline — это исходная конфигурация модели, полученная из backend
 (`baseline.configuration` и `baseline.metrics` из `GET /api/model`,
 `baseline` из ответа `/api/predict`).
 
-Важно:
+Инвариант:
 
 ```text
 prediction(baseline) == actual compressed baseline
@@ -567,47 +601,10 @@ prediction(baseline) == actual compressed baseline
 * UI должен отображать отсутствие изменения;
 * Grafana должна иметь соответствующую baseline/actual точку.
 
----
+В интерфейсе обязательна кнопка «Reset to baseline», вызывающая
+`POST /api/reset` (контракт и поведение — см. раздел 7.3).
 
-# 14. Reset to baseline
-
-Добавить кнопку:
-
-```text
-Reset to baseline
-```
-
-Endpoint (реализован на backend):
-
-```http
-POST /api/reset
-```
-
-Тело запроса не требуется.
-
-Поведение backend:
-
-1. принудительно перечитывает конфигурацию из `comparison.json`
-   (Source of Truth, а не из текущего буфера);
-2. перезаписывает буфер `data/model.json` исходными данными;
-3. выполняет prediction для baseline-конфигурации;
-4. возвращает **тот же формат, что и `POST /api/predict`** (`PredictionResponse`).
-
-Важно для frontend: `/api/reset` **не возвращает** заново `GET /api/model`.
-После успешного reset frontend должен:
-
-* установить все sliders в значения `response.configuration`
-  (это baseline-конфигурация);
-* обновить prediction-панель по ответу reset (для baseline предсказанные
-  метрики точно равны baseline-метрикам);
-* опционально выполнить повторный `GET /api/model`, если нужно обновить прочий UI.
-
-Это гарантирует, что пользователь всегда может вернуться к проверенной точке
-отсчета, даже если `data/model.json` был поврежден или изменен вручную.
-
----
-
-# 15. Prediction Support
+### 8.5. Prediction Support
 
 Отобразить `support`, возвращаемый backend (`support.level`: `high` / `medium` / `low`).
 
@@ -615,12 +612,6 @@ POST /api/reset
 
 ```text
 Prediction support: HIGH
-```
-
-или:
-
-```text
-Prediction support: MEDIUM
 ```
 
 или:
@@ -642,9 +633,7 @@ well covered by existing experiments.
 
 если backend не предоставляет статистически обоснованный confidence interval.
 
----
-
-# 16. Actual vs Predicted
+### 8.6. Actual vs Predicted
 
 Frontend должен явно отличать:
 
@@ -667,53 +656,20 @@ Actual — результат реального black-box experiment. На ур
 Predicted — результат surrogate model: словарь `prediction` из ответа `/api/predict`.
 
 Prediction не должна визуально выглядеть как фактически измеренный результат.
-
 Если frontend строит собственные prediction charts, необходимо использовать разные визуальные обозначения.
 
----
+### 8.7. Experiment History
 
-# 17. Experiment History
-
-Backend предоставляет:
-
-```http
-GET /api/experiments
-```
-
-Ответ — **массив** объектов:
-
-```json
-[
-  {
-    "experiment_id": "exp_001",
-    "timestamp": "2026-09-15T10:00:00Z",
-    "configuration": { "param_a": 0.82, "param_b": 0.47, "param_c": 1.15 },
-    "metrics": {
-      "accuracy_top1": 0.7589,
-      "f1_macro": 0.7498,
-      "latency_ms": 12.8,
-      "memory_mb": 128.0
-    },
-    "model_id": "gemma_quantization_demo"
-  }
-]
-```
-
-Особенности:
-
-* `metrics` здесь — словарь `name -> compressed` (в отличие от массива в `GET /api/model`);
-* `timestamp` приходит в ISO-формате, но у отдельных snapshots может
-  отсутствовать — UI должен допускать отсутствие даты;
-* список может быть пустым (пока эксперименты не загружены);
-* записи упорядочены по имени файла.
-
-UI: список сохранённых прогонов; клик по записи устанавливает все sliders в
-`configuration` эксперимента и вызывает `POST /api/predict` для этой точки
-(metrics из записи отображаются как справочные actual-значения).
+UI: список сохранённых прогонов (данные — `GET /api/experiments`, см. раздел 7.4);
+клик по записи устанавливает все sliders в `configuration` эксперимента и
+вызывает `POST /api/predict` для этой точки (metrics из записи отображаются
+как справочные actual-значения).
 
 ---
 
-# 18. Grafana integration
+## 9. Интеграция с Grafana
+
+### 9.1. Границы ответственности
 
 Grafana уже поднимается и настраивается backend/devops частью.
 
@@ -728,9 +684,7 @@ Frontend не должен:
 
 Frontend получает готовый Dashboard URL.
 
----
-
-# 19. Grafana Dashboard URL
+### 9.2. Dashboard URL и компонент
 
 Добавить в `.env.example` и не забыть про `.env`:
 
@@ -748,11 +702,7 @@ const grafanaUrl = import.meta.env.VITE_GRAFANA_DASHBOARD_URL;
 
 Не хардкодить URL в компоненте.
 
----
-
-# 20. GrafanaDashboard component
-
-Создать:
+Компонент размещается в:
 
 ```text
 src/components/GrafanaDashboard/GrafanaDashboard.tsx
@@ -781,9 +731,7 @@ Grafana может требовать авторизацию в самом бр�
 страницу логина Grafana — это ожидаемое поведение, frontend не должен
 передавать credentials программно.
 
----
-
-# 21. Grafana role
+### 9.3. Роль Grafana в потоке данных
 
 Grafana является визуальным слоем над результатами, которые записывает backend.
 
@@ -804,7 +752,6 @@ POST /api/predict
 ```
 
 Frontend не должен ждать обновления Grafana для отображения prediction.
-
 Prediction должна отображаться непосредственно из ответа `/api/predict`.
 
 Grafana используется для:
@@ -817,7 +764,7 @@ Grafana используется для:
 
 ---
 
-# 22. Grafana layout
+## 10. Макет страницы
 
 В интерфейсе приложения предусмотреть отдельную секцию:
 
@@ -853,9 +800,9 @@ Grafana используется для:
 
 ---
 
-# 23. Loading states
+## 11. Состояния загрузки и обработка ошибок
 
-Предусмотреть:
+Loading states — предусмотреть:
 
 * initial model loading;
 * prediction loading;
@@ -870,13 +817,9 @@ Grafana используется для:
 Calculating...
 ```
 
-или аналогичный loading indicator.
+или аналогичный индикатор загрузки.
 
----
-
-# 24. Error handling
-
-Frontend должен корректно обрабатывать:
+Error handling — frontend должен корректно обрабатывать:
 
 ```text
 Backend unavailable
@@ -893,12 +836,11 @@ Backend возвращает HTTP 422 с телом вида
 сохраняя предыдущее валидное состояние UI.
 
 Grafana failure не должен ломать prediction UI.
-
 Prediction failure не должен ломать Grafana UI.
 
 ---
 
-# 25. Responsive layout
+## 12. Адаптивность
 
 Минимально поддержать:
 
@@ -911,7 +853,7 @@ Grafana iframe должен адаптироваться к ширине кон�
 
 ---
 
-# 26. Definition of Done
+## 13. Definition of Done
 
 Frontend MVP считается готовым, если:
 

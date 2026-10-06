@@ -7,6 +7,7 @@ from typing import Any
 
 from ..config import Settings
 from ..models.experiment import Experiment, normalize_experiment_payload
+from .preprocess_service import preprocess_raw_payload, split_black_box_payload
 
 
 class ExperimentStore:
@@ -39,6 +40,8 @@ class ExperimentStore:
 
     def _load_experiment_file(self, path: Path) -> tuple[Experiment, dict[str, Any]]:
         raw = self._read_json(path)
+        self.archive_experiments(raw)
+        raw = preprocess_raw_payload(raw)
         source_payload = raw
         # After an interactive prediction, model.json is a user buffer rather
         # than a complete experiment. Keep a canonical source snapshot in that
@@ -50,6 +53,33 @@ class ExperimentStore:
                 source_payload = embedded
         normalized = normalize_experiment_payload(source_payload, path.stem)
         return Experiment.model_validate(normalized), raw
+
+    def archive_experiments(self, payload: Any) -> list[Path]:
+        """Split a multi-experiment black box document into ``data/experiments/``.
+
+        Every run from ``payload["experiments"]`` is converted to the canonical
+        comparison shape and stored under its own ``experiment_id`` (skipped if
+        the snapshot already exists — runs are immutable).  The first entry of
+        the file is *also* archived; it additionally becomes model.json via
+        :meth:`ensure_model_buffer`.  Legacy single-experiment documents yield
+        an empty list.
+        """
+        if not isinstance(payload, dict) or "experiments" not in payload:
+            return []
+        written: list[Path] = []
+        for converted in split_black_box_payload(payload):
+            # Runs without identifiers cannot be named on disk; skip them.
+            try:
+                if not converted.get("experiment_id"):
+                    continue
+                target = self.settings.experiments_dir / f"{converted['experiment_id']}.json"
+                if target.exists():
+                    continue
+                self.write_json(target, converted)
+                written.append(target)
+            except Exception:  # pragma: no cover - archiving must never break loading
+                continue
+        return written
 
     def load_source(self) -> tuple[Experiment, dict[str, Any], Path]:
         for candidate in self._comparison_candidates():
@@ -88,7 +118,7 @@ class ExperimentStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(f"{path.suffix}.tmp")
         with temporary.open("w", encoding="utf-8") as handle:
-            json.dump(value, handle, ensure_ascii=False, indent=2, default=str)
+            json.dump(value, handle, ensure_ascii=False, indent=2, default=str, allow_nan=True)
             handle.write("\n")
         temporary.replace(path)
 

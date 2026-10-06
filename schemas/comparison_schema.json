@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "experiment_id": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "full_model": {
+          "type": "string"
+        },
+        "compressed_model": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "model_id": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "param_a": {
+          "type": "number"
+        },
+        "param_b": {
+          "type": "number"
+        },
+        "param_c": {
+          "type": "number"
+        }
+      }
+    },
+    "critical_parameters": {
+      "type": "object",
+      "properties": {
+        "param_a": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "boolean"
+            },
+            "baseline": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "sensitivity": {
+              "type": "object",
+              "properties": {
+                "accuracy_top1": {
+                  "type": "number"
+                },
+                "f1_macro": {
+                  "type": "number"
+                },
+                "latency_ms": {
+                  "type": "number"
+                },
+                "memory_mb": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "param_b": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "boolean"
+            },
+            "baseline": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "sensitivity": {
+              "type": "object",
+              "properties": {
+                "accuracy_top1": {
+                  "type": "number"
+                },
+                "f1_macro": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "param_c": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "boolean"
+            },
+            "baseline": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "sensitivity": {
+              "type": "object",
+              "properties": {
+                "latency": {
+                  "type": "number"
+                },
+                "memory": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string"
+            },
+            "full": {
+              "type": "number"
+            },
+            "compressed": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string"
+            },
+            "full": {
+              "type": "number"
+            },
+            "compressed": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string"
+            },
+            "full": {
+              "type": "number"
+            },
+            "compressed": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string"
+            },
+            "full": {
+              "type": "integer"
+            },
+            "compressed": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "per_class": {
+      "type": "array",
+      "items": {}
+    }
+  }
+}

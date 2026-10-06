@@ -1,34 +1,69 @@
-'use client'
+const GRAFANA_ORIGIN_DEFAULT = 'http://localhost:3000'
 
-// Grafana — только визуальный слой над данными, которые пишет backend.
-// Frontend не использует Grafana API, не подключается к InfluxDB и не хранит
-// credentials (см. documentations/frontend_TASKA.md, разделы 18–20).
-//
-// URL дашборда приходит из environment: NEXT_PUBLIC_GRAFANA_DASHBOARD_URL
-// (в Vite-схеме из таска — VITE_GRAFANA_DASHBOARD_URL); в качестве fallback
-// используется стандартный адрес провижиненного дашборда model-comparison.
-// Значение прокидывается из page.tsx, чтобы источник env-переменных был один.
-const GRAFANA_DASHBOARD_DEFAULT = 'http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk'
+type Props = {
+  /* Базовый URL дашборда из env (может содержать orgId/kiosk). */
+  url?: string
+  /* Имя выбранного ползунка — уходит в дашборд как var-param_name. */
+  paramName?: string
+  /* Текущее значение выбранного ползунка — var-param_value. */
+  paramValue?: number | null
+  /* Метрика для оси Y — var-metric_choice. */
+  metric?: string
+}
 
-type Props = { url?: string }
+/* Отправляет Grafana standard-событие refresh-dashboard. */
+export function requestGrafanaRefresh(iframeUrl?: string) {
+  try {
+    const origin = new URL(iframeUrl || GRAFANA_ORIGIN_DEFAULT).origin
+    window.postMessage({ type: 'refresh-dashboard' }, origin)
+  } catch {
+    /* некорректный URL — просто не обновляем */
+  }
+}
 
-export default function GrafanaDashboard({ url }: Props) {
-  const src = url || process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || process.env.VITE_GRAFANA_DASHBOARD_URL || GRAFANA_DASHBOARD_DEFAULT
+function splitBase(url: string) {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    const search = new URLSearchParams(parsed.search)
+    search.delete('var-param_name')
+    search.delete('var-param_value')
+    search.delete('var-metric_choice')
+    parsed.search = search.toString()
+    return parsed.toString().replace(/[?&]$/, '')
+  } catch {
+    return url
+  }
+}
 
-  // Если Grafana недоступна/URL не задан — показываем заглушку: отказ Grafana
-  // не должен ломать prediction UI (раздел 24 таска).
-  if (!src) {
+export default function GrafanaDashboard({ url, paramName, paramValue, metric }: Props) {
+  const raw = url || process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || process.env.VITE_GRAFANA_DASHBOARD_URL || ''
+
+  // Если Grafana недоступна/URL не задан — показываем заглушку: отказ Grafana не должен ломать prediction UI.
+  if (!raw) {
     return (
       <div className="grafana-placeholder">
         <span>
-          Set <code>NEXT_PUBLIC_GRAFANA_DASHBOARD_URL</code> to connect the dashboard.
+          Задайте <code>NEXT_PUBLIC_GRAFANA_DASHBOARD_URL</code>, чтобы подключить дашборд.
         </span>
       </div>
     )
   }
 
+  const base = splitBase(raw)
+  const params = new URLSearchParams()
+  if (paramName) params.set('var-param_name', paramName)
+  if (paramValue !== undefined && paramValue !== null && Number.isFinite(paramValue)) {
+    params.set('var-param_value', String(Math.round(paramValue * 100) / 100))
+  }
+  if (metric) params.set('var-metric_choice', metric)
+
+  const extra = params.toString()
+  const src = extra ? `${base}${base.includes('?') ? '&' : '?'}${extra}` : base
+
   return (
     <iframe
+      // key меняет ссылку целиком — при переключении параметра Grafana перечитывает дашборд с новыми var-* значениями.
+      key={src}
       src={src}
       title="Grafana dashboard"
       className="grafana-frame"

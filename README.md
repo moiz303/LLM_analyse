@@ -8,6 +8,13 @@
 
 ---
 
+<p align="center">
+  <img src="src/img/preview.png" width="1024" alt="Предпросмотр продукта">
+</p>
+
+
+---
+
 ## Оглавление
 
 - [О проекте](#о-проекте)
@@ -95,7 +102,7 @@ Frontend ── POST /api/predict ──> FastAPI ──> InfluxDB
 Проект намеренно разделяет три уровня хранения:
 
 - `comparison.json` — неизменяемый источник истины для baseline и Reset
-  (единственный файл данных, который хранится в Git);
+  (единственный файл данных, который не должен попадать в Git, за исключением уже активного мокового файла);
 - `model.json` — текущий buffer параметров пользователя; создаётся backend
   внутри контейнера (копируется из `comparison.json`) при первом запросе;
 - `data/experiments/` — snapshots экспериментов; заполняется ingest'ом при
@@ -115,6 +122,25 @@ data/model.json
 ```
 
 `comparison.json` существует всегда, он всегда имеет наивысший приоритет.
+
+### Препроцессинг вывода black box
+
+Black box отдаёт результат по формату
+`schemas/black_box_experiments_schema.json` (массив `experiments`, объектные
+модельные идентификаторы, критические параметры вида `{critical, type, value}`,
+отдельные `baseline_values` / `parameter_ranges`). Backend потребляет канонический
+формат `schemas/comparison_schema.json`. Между ними лежит препроцессор
+`backend/app/services/black_box_preprocessor.py`: при загрузке source of truth и
+в `ingest.py` сырой вывод black box автоматически приводится к виду
+`comparison.json` (берётся последний по timestamp запуск), а файлы, уже
+соответствующие каноническому формату, проходят без изменений.
+
+Схемы из `schemas/` используются препроцессором и валидацией во время работы
+сервера: они копируются в образ (`COPY schemas /app/schemas`) и дополнительно
+монтируются в backend-контейнер как `./schemas:/app/schemas:ro` (рядом с
+`/app/data`). Путь определяется в рантайме: переменная окружения `SCHEMAS_DIR`
+(задаётся в docker-compose), иначе — поиск папки `schemas/` среди родительских
+каталогов приложения; при отсутствии возвращается понятная ошибка.
 
 ---
 
@@ -136,16 +162,17 @@ data/model.json
 
 - Docker с Docker Compose;
 - доступный Docker daemon;
-- файл `comparison.json` в корне проекта.
+- файл `comparison.json`.
 
 Python на хост-системе для обычного запуска не требуется: backend и ingest
 работают внутри Docker-контейнера.
 
 ### Шаги
 
-1. Создайте локальный файл окружения:
+1. Стандартные первые шаги:
 
    ```bash
+   git clone https://github.com/moiz303/LLM_analyse.git
    cp .env.example .env
    ```
 
@@ -193,7 +220,7 @@ Python на хост-системе для обычного запуска не 
    3. запишет actual-результаты в InfluxDB;
    4. запустит FastAPI.
 
-   Отдельно выполнять `python backend/ingest.py comparison.json` не нужно, эта команда встроена в запуск backend-контейнера (отличие от предыдущей версии).
+   Отдельно выполнять `python backend/ingest.py comparison.json` не нужно, эта команда встроена в запуск backend-контейнера.
 
 5. Проверьте статус контейнеров и автоматической загрузки:
 
@@ -205,7 +232,7 @@ Python на хост-системе для обычного запуска не 
    В логах backend должна появиться строка вида:
 
    ```text
-   Validated and ingested exp_xxx (...)
+   Validated and ingested file-xxx (N metrics)
    ```
 
 ### Адреса сервисов
@@ -225,14 +252,6 @@ Frontend может использовать:
 NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk
 ```
 
-> Переменные `NEXT_PUBLIC_*` вшиваются в клиентский бандл **на этапе сборки
-> образа** (build arg в `docker-compose.yml`), поэтому при их изменении нужно
-> пересобрать образ: `docker compose build frontend`. Адрес backend для
-> браузера задаётся переменной `NEXT_PUBLIC_API_URL`
-> (по умолчанию `http://localhost:8000`). В `FRONTEND_ORIGINS` backend должен
-> содержать адрес фронта (например, `http://localhost:3100`) — иначе браузер
-> заблокирует запросы CORS.
-
 Логин Grafana берётся из `GRAFANA_ADMIN_USER` и
 `GRAFANA_ADMIN_PASSWORD`.
 
@@ -244,10 +263,18 @@ NEXT_PUBLIC_GRAFANA_DASHBOARD_URL=http://localhost:3000/d/model-comparison/model
 docker compose up -d
 ```
 
-При изменении Dockerfile или Python-кода:
+При изменении Dockerfile или кода:
 
 ```bash
 docker compose up -d --build
+```
+
+При необходимости не записи новых данных, а полного пересоздания базы InfluxDB:
+
+```bash
+docker compose down -v
+
+docker compose up -d
 ```
 
 ---
@@ -259,8 +286,8 @@ docker compose up -d --build
 ├── .env.example                         # шаблон переменных окружения
 ├── .gitignore
 ├── Dockerfile                           # образ FastAPI backend
-├── docker-compose.yml                   # backend + InfluxDB + Grafana + frontend
-├── comparison.json                      # канонический baseline
+├── docker-compose.yml                   # backend + InfluxDB + Grafana
+├── comparison.json                      # канонический baseline (в Git только mock)
 ├── backend/
 │   ├── app/
 │   │   ├── api/                         # HTTP-маршруты
@@ -481,23 +508,30 @@ prediction_mode=sensitivity_model
 
 Backend пишет все точки в один measurement `metric_results`:
 
-| Тег               | Значения                                    | Назначение                              |
-|-------------------|---------------------------------------------|-----------------------------------------|
-| `model_id`        | из `meta.model_id`                          | идентификатор модели                    |
-| `experiment_id`   | id эксперимента / `interactive` для predict | связь с историей                        |
-| `result_type`     | `actual` / `predicted`                      | разделение измеренного и предсказанного |
-| `prediction_mode` | `black_box` / `sensitivity_model`           | источник значения                       |
-| `model_type`      | `full` / `compressed` / `predicted`         | какая модель описана точкой             |
-| `support_level`   | `high` / `medium` / `low`                   | только у predicted-точек                |
+| Тег               | Значения                                    | Назначение                                                  |
+|-------------------|---------------------------------------------|-------------------------------------------------------------|
+| `model_id`        | из `meta.model_id`                          | идентификатор модели                                        |
+| `experiment_id`   | id эксперимента / `interactive` для predict | связь с историей                                            |
+| `result_type`     | `actual` / `predicted`                      | разделение измеренного и предсказанного                     |
+| `prediction_mode` | `black_box` / `sensitivity_model`           | источник значения                                           |
+| `model_type`      | `full` / `compressed` / `predicted`         | какая модель описана точкой                                 |
+| `support_level`   | `high` / `medium` / `low`                   | только у predicted-точек                                    |
+| `cfg_<param>`     | значение параметра конфигурации             | только у predicted-точек; фильтр реактивной серии в Grafana |
 
 Каждая точка содержит поля — по одному на каждую метрику (`accuracy_top1`,
 `latency_ms` и т.д.). Actual-данные пишутся двумя точками (full и compressed)
 со временем из `meta.timestamp`; prediction — одной точкой с текущим временем.
 
-> Примечание: два panel-запроса dashboard («Support пользовательской модели» и
-> «История support») обращаются к measurement `model_results` и полю
-> `support_score`, которые backend не записывает — эти panels будут пустыми,
-> пока dashboard или backend не будут приведены к единой схеме.
+> Дашборд `model-comparison` намеренно содержит ровно две панели: таблицу
+> экспериментов (группировка по `_time`) и timeseries выбранной метрики, где
+> рядом с сериями `full`/`compressed` рисуется реактивная серия `predicted`.
+> Панели про support удалены (backend не пишет `model_results`/`support_score`).
+> Выбор параметра для реактивной серии приходит из dropdown-переменных
+> `param_name` / `param_value` (плюс `metric_choice`); фронт пробрасывает их в
+> iframe через `var-param_name=&var-param_value=`, а обновление дашборда идёт по
+> событию (postMessage `refresh-dashboard` после каждого /api/predict), поэтому
+> автополлинг выключен (`refresh: ""`). Значения `cfg_*` нормализуются до двух
+> знаков — ровно как шаг ползунка на фронте.
 
 Grafana и backend подключаются к InfluxDB по внутреннему адресу
 `INFLUXDB_URL`, например `http://influxdb:8086`. Браузер использует
@@ -528,7 +562,7 @@ host-facing порты из `.env`.
 |--------------------|------------------------------|-----------------------|
 | `DATA_DIR`         | Каталог runtime-данных       | `data`                |
 | `COMPARISON_PATH`  | Путь к source-of-truth       | `comparison.json`     |
-| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:5173        |
+| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:3100        |
 
 ### InfluxDB
 
@@ -664,4 +698,4 @@ docker compose up -d --build
 ## Ссылки
 
 - Исходный notebook и источник экспериментальных данных:
-  <https://www.kaggle.com/code/flyin123/gemma-notebook>
+  <https://www.kaggle.com/code/flyin123/gemmaq5>
