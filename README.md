@@ -2,6 +2,10 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![React](https://img.shields.io/badge/React-19-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8)
 ![Grafana](https://img.shields.io/badge/Grafana-11-orange)
 ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-red)
 ![Docker](https://img.shields.io/badge/Docker-blue)
@@ -21,12 +25,14 @@
 - [Архитектура](#архитектура)
 - [Стек](#стек)
 - [Быстрый старт](#быстрый-старт)
+  - [Frontend без Docker](#frontend-без-docker)
 - [Структура проекта](#структура-проекта)
-- [Формат `comparison.json`](#формат-comparisonjson)
+- [Формат входных данных](#формат-comparisonjson)
 - [API](#api)
 - [InfluxDB и Grafana](#influxdb-и-grafana)
 - [Переменные окружения](#переменные-окружения)
 - [Для разработчиков](#для-разработчиков)
+- [Документация проекта](#документация-проекта)
 - [Troubleshooting](#troubleshooting)
 - [Лицензия](#лицензия)
 - [Ссылки](#ссылки)
@@ -46,12 +52,27 @@
 Backend предоставляет:
 
 - валидацию конфигурации и экспериментальных данных;
+- препроцессинг сырого вывода black box в канонический формат;
 - публичную конфигурацию модели для построения slider-интерфейса;
 - быстрые предсказания изменения метрик;
 - сохранение истории экспериментов;
 - раздельную запись actual и predicted данных в InfluxDB;
 - готовый dashboard Grafana для сравнения полной, сжатой, предсказанной и
   исторической информации.
+
+Frontend (Next.js + React + Tailwind CSS) предоставляет:
+
+- интерфейс с ползунками параметров, построенный полностью на данных из
+  `GET /api/model` (значения диапазонов и метрики не дублируются в коде);
+- карточку сравнения «полная модель vs сжатая/prediction» с дельтами и
+  цветовой индикацией улучшения/ухудшения;
+- историю экспериментов (`GET /api/experiments`) с применением сохранённой
+  конфигурации одним кликом;
+- индикатор support/точности prediction с предупреждением при экстраполяции;
+- встроенный iframe Grafana-dashboard, реактивный к выбранному ползунку
+  (`var-param_name` / `var-param_value`) и обновляемый по postMessage после
+  каждого `POST /api/predict`;
+- кнопку возврата к baseline через `POST /api/reset`.
 
 ---
 
@@ -69,7 +90,8 @@ Backend предоставляет:
               ▼
 ┌────────────────────────────┐
 │ FastAPI backend            │
-│ валидация и predictor      │
+│ препроцессинг, валидация   │
+│ и sensitivity-predictor    │
 └───────┬──────────────┬─────┘
         │              │
         │              ├── data/model.json
@@ -91,11 +113,17 @@ Backend предоставляет:
 └────────────────────────────┘
 ```
 
-Структура запроса от Frontend:
+Поток данных с участием Frontend:
 
 ```text
-Frontend ── POST /api/predict ──> FastAPI ──> InfluxDB
+Frontend (Next.js) ── GET /api/model ──────> FastAPI   (построение ползунков)
+                 ──── POST /api/predict ───> FastAPI ──> InfluxDB
+                 ──── iframe + postMessage ────────────> Grafana (визуализация)
 ```
+
+Frontend обращается к backend через `NEXT_PUBLIC_API_URL` (по умолчанию
+`http://localhost:8000`); при локальном запуске без этого env работает rewrite
+`/backend/:path* → http://localhost:8000/:path*` из `next.config.mjs`.
 
 ### Уровни данных
 
@@ -125,15 +153,28 @@ data/model.json
 
 ### Препроцессинг вывода black box
 
-Black box отдаёт результат по формату
+Black box (Kaggle notebook «GemmaQ5», см. `documentations/blackbox_documentation.md`)
+отдаёт результат по формату
 `schemas/black_box_experiments_schema.json` (массив `experiments`, объектные
 модельные идентификаторы, критические параметры вида `{critical, type, value}`,
 отдельные `baseline_values` / `parameter_ranges`). Backend потребляет канонический
 формат `schemas/comparison_schema.json`. Между ними лежит препроцессор
-`backend/app/services/black_box_preprocessor.py`: при загрузке source of truth и
+`backend/app/services/preprocess_service.py`: при загрузке source of truth и
 в `ingest.py` сырой вывод black box автоматически приводится к виду
-`comparison.json` (берётся последний по timestamp запуск), а файлы, уже
-соответствующие каноническому формату, проходят без изменений.
+`comparison.json`, а файлы, уже соответствующие каноническому формату, проходят
+без изменений.
+
+Правила выбора эксперимента (`preprocess_raw_payload`):
+
+- `model.json` всегда получает **первый** эксперимент из файла
+  (`payload["experiments"][0]`); если он пустой (нет ни метрик, ни параметров),
+  берётся самый содержательный запуск;
+- остальные запуски архивируются в `data/experiments/` через
+  `split_black_box_payload` — каждый под своим `experiment_id`;
+- недостающие стороны метрик (full или compressed) восстанавливаются из
+  соседних экспериментов того же документа (cross-experiment fallback);
+- нечисловые токены (`N/A`, `null` и т.п.) нормализуются в «нет измерения»,
+  оригинальный вывод сохраняется в snapshot как `source_experiment`.
 
 Схемы из `schemas/` используются препроцессором и валидацией во время работы
 сервера: они копируются в образ (`COPY schemas /app/schemas`) и дополнительно
@@ -146,13 +187,29 @@ Black box отдаёт результат по формату
 
 ## Стек
 
+**Backend и данные:**
+
 - **Python 3.11** — backend и ingestion pipeline;
-- **FastAPI** — HTTP API;
+- **FastAPI** (+ Uvicorn) — HTTP API;
 - **Pydantic** — валидация входных данных и конфигурации;
-- **InfluxDB 2.7** — хранение временных рядов;
-- **Grafana 11** — визуализация и dashboard;
-- **Docker / Docker Compose** — запуск всего локального стека;
-- **pytest** — автоматические тесты backend.
+- **influxdb-client** — запись actual/predicted точек в InfluxDB;
+- **pytest + httpx** — автоматические тесты backend (`backend/tests`).
+
+**Frontend:**
+
+- **Next.js 16 (App Router) + React 19** — SPA-интерфейс (`frontend/app/page.tsx`);
+- **TypeScript 5.7** — типизация контрактов API;
+- **Tailwind CSS 4** — стилизация;
+- **lucide-react, @base-ui/react, shadcn-утилиты** — UI-примитивы (`components/ui`);
+- **pnpm 12** — пакетный менеджер (`pnpm-lock.yaml`, `packageManager` в `package.json`).
+
+**DevOps / визуализация:**
+
+- **Docker / Docker Compose** — единый локальный стек из четырёх сервисов:
+  `backend`, `frontend`, `influxdb`, `grafana`;
+- **InfluxDB 2.7 (alpine)** — хранение временных рядов;
+- **Grafana 11.1** — datasource и dashboard через provisioning
+  (`provisioning/`), embedding и анонимный Viewer для iframe с фронтенда.
 
 ---
 
@@ -162,10 +219,12 @@ Black box отдаёт результат по формату
 
 - Docker с Docker Compose;
 - доступный Docker daemon;
-- файл `comparison.json`.
+- файл `comparison.json` в корне проекта.
 
-Python на хост-системе для обычного запуска не требуется: backend и ingest
-работают внутри Docker-контейнера.
+Python и Node.js на хост-системе для обычного запуска не требуются: backend,
+ingest и frontend собираются и работают внутри Docker-контейнеров. Для локальной
+разработки фронтенда нужны Node.js 20+ и pnpm 12 (см. раздел
+[Frontend без Docker](#frontend-без-docker)).
 
 ### Шаги
 
@@ -203,9 +262,11 @@ Python на хост-системе для обычного запуска не 
    Backend и ingest используют `${INFLUXDB_TOKEN}` из `.env` автоматически — там
    ручное копирование не нужно. Файл `.env` нельзя добавлять в Git.
 
-3. Убедитесь, что `comparison.json` находится в корне проекта. Это
-   канонический baseline текущего demo. Для другого эксперимента замените
-   файл валидным JSON того же формата.
+3. Убедитесь, что `comparison.json` находится в корне проекта. В репозитории
+   лежит моковый black-box вывод (`black_box_experiments.v1`) текущего demo —
+   препроцессор нормализует его автоматически. Для другого эксперимента
+   замените файл валидным JSON канонического формата или сырым выводом
+   black box.
 
 4. Запустите весь стек:
 
@@ -277,6 +338,47 @@ docker compose down -v
 docker compose up -d
 ```
 
+### Frontend без Docker
+
+Для локальной разработки фронтенда (с hot reload) не обязательно пересобирать
+Docker-образ. Достаточно запустить backend и инфраструктуру в Docker, а
+frontend — локально через pnpm.
+
+Требования: **Node.js 20+** и **pnpm 12.3.4** (закреплён в `packageManager`
+файла `frontend/package.json`; удобно ставить через `corepack enable`).
+
+1. Запустите backend, InfluxDB и Grafana:
+
+   ```bash
+   docker compose up -d backend influxdb grafana
+   ```
+
+2. Установите зависимости и запустите dev-сервер:
+
+   ```bash
+   cd frontend
+   pnpm install
+   pnpm dev
+   ```
+
+   Frontend будет доступен на <http://localhost:3000> (dev-порт Next.js; в
+   Docker-образе используется `FRONTEND_PORT=3100`).
+
+Как frontend находит backend:
+
+- если задан `NEXT_PUBLIC_API_URL` (по умолчанию в `.env.example` —
+  `http://localhost:8000`), браузер обращается к backend напрямую по этому
+  адресу;
+- если переменная не задана, работает rewrite из `next.config.mjs`:
+  `/backend/:path* → ${BACKEND_URL || API_URL || http://localhost:8000}/:path*`.
+  В Docker адрес backend передаётся через `BACKEND_URL`
+  (= `FRONTEND_BACKEND_URL`, `http://backend:8000`); локально значение по
+  умолчанию уже корректно, если backend слушает порт 8000 на хосте.
+
+Адрес Grafana-dashboards для iframe задаётся переменной
+`NEXT_PUBLIC_GRAFANA_DASHBOARD_URL` (см. раздел
+[Переменные окружения](#переменные-окружения)).
+
 ---
 
 ## Структура проекта
@@ -284,33 +386,66 @@ docker compose up -d
 ```text
 .
 ├── .env.example                         # шаблон переменных окружения
-├── .gitignore
 ├── Dockerfile                           # образ FastAPI backend
-├── docker-compose.yml                   # backend + InfluxDB + Grafana
-├── comparison.json                      # канонический baseline (в Git только mock)
+├── docker-compose.yml                   # backend + frontend + InfluxDB + Grafana
+├── comparison.json                      # source of truth (в Git — моковый black-box вывод текущего demo)
+├── requirements.txt                     # зависимости backend (устанавливаются в Dockerfile)
 ├── backend/
 │   ├── app/
-│   │   ├── api/                         # HTTP-маршруты
+│   │   ├── api/                         # HTTP-маршруты (health, model, predict)
 │   │   ├── models/                      # Pydantic-контракты
-│   │   ├── predictors/                  # predictor и sensitivity-модель
-│   │   └── services/                    # storage, prediction, InfluxDB
+│   │   ├── predictors/                  # base-predictor и sensitivity-модель
+│   │   └── services/                    # storage, preprocess, prediction, InfluxDB
 │   ├── ingest.py                        # валидация и actual ingest
-│   ├── requirements.txt
-│   └── tests/
+│   ├── pytest.ini                       # конфигурация тестов (pythonpath)
+│   ├── requirements.txt                 # backend + dev-зависимости (pytest, httpx)
+│   └── tests/                           # pytest: API, модели, predictor, сервисы
+├── frontend/                            # Next.js 16 приложение (отдельный Dockerfile)
+│   ├── app/                             # App Router: page.tsx, layout.tsx, globals.css
+│   ├── components/
+│   │   ├── GrafanaDashboard/            # iframe-обёртка дашборда (postMessage refresh)
+│   │   └── ui/                          # shadcn-примитивы
+│   ├── lib/                             # утилиты (cn и т.п.)
+│   ├── public/                          # иконки и статика
+│   ├── Dockerfile                       # multi-stage сборка (node:20-alpine, pnpm)
+│   ├── next.config.mjs                  # rewrite /backend/:path* → backend URL
+│   ├── package.json                     # pnpm@12.3.4 (packageManager)
+│   └── pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.json, postcss.config.mjs
 ├── data/
-│   └── experiments/                     # runtime-snapshots (пусто в Git)
-└── provisioning/
-    ├── datasources/
-    │   └── influxdb.yml                 # datasource Grafana
-    └── dashboards/
-        ├── dashboard.yml                # provider dashboard
-        └── model_comparison.json        # dashboard Grafana
+│   └── experiments/                     # runtime-snapshots (пусто в Git, только .gitkeep)
+├── documentations/                      # документация проекта (см. «Документацию проекта» ниже)
+├── provisioning/
+│   ├── datasources/
+│   │   └── influxdb.yml                 # datasource Grafana
+│   └── dashboards/
+│       ├── dashboard.yml                # provider dashboard
+│       └── model_comparison.json        # dashboard Grafana
+├── schemas/                             # JSON-схемы (монтируются в backend-контейнер)
+│   ├── black_box_experiments_schema.json # формат вывода black box (Kaggle)
+│   ├── comparison_schema.json           # канонический формат source of truth
+│   ├── experiment_schema.json           # snapshot эксперимента
+│   └── model_schema.json                # схема model.json
+└── src/img/preview.png                  # изображение предпросмотра для README
 ```
 
 В репозитории из `data/` хранится только каталог `experiments/` с `.gitkeep`.
 `model.json` и файлы экспериментов — runtime-данные, которые создаются backend
 и ingest внутри Docker-контейнера; вручную их создавать не нужно, и они не
 должны использоваться как замена `comparison.json`.
+
+---
+
+## Документация проекта
+
+Подробные документы лежат в `documentations/`:
+
+| Файл                                                                | Содержание                                                  |
+|---------------------------------------------------------------------|-------------------------------------------------------------|
+| `backend_documentation.md`                                          | архитектура backend, контракты API и DevOps-часть           |
+| `frontend_documentation.md`                                         | архитектура frontend и требования UI                        |
+| `blackbox_documentation.md`                                         | формат вывода black box Kaggle (`black_box_experiments.v1`) |
+| `user-story.md`                                                     | пользовательские сценарии                                   |
+| `backend_TASKA.md`, `frontend_TASKA.md`, `blackbox_output_TASKA.md` | постановки задач (TASK A)                                   |
 
 ---
 
@@ -550,19 +685,32 @@ host-facing порты из `.env`.
 | `BACKEND_PORT`            | Порт backend на хосте                    | `8000`                 |
 | `INFLUXDB_PORT`           | Порт InfluxDB на хосте                   | `8086`                 |
 | `GRAFANA_PORT`            | Порт Grafana на хосте                    | `3000`                 |
+| `FRONTEND_PORT`           | Порт frontend на хосте                   | `3100`                 |
 | `BACKEND_HOST`            | Адрес прослушивания backend в контейнере | `0.0.0.0`              |
 | `BACKEND_CONTAINER_PORT`  | Порт backend внутри контейнера           | `8000`                 |
 | `INFLUXDB_URL`            | Внутренний URL InfluxDB                  | `http://influxdb:8086` |
 | `INFLUXDB_CONTAINER_PORT` | Порт InfluxDB внутри сети Docker         | `8086`                 |
 | `GRAFANA_CONTAINER_PORT`  | Порт Grafana внутри контейнера           | `3000`                 |
+| `FRONTEND_CONTAINER_PORT` | Порт frontend внутри контейнера          | `3100`                 |
+
+### Frontend
+
+| Переменная                          | Назначение                                                    | Значение по умолчанию                                                     |
+|-------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------------------|
+| `FRONTEND_BACKEND_URL`              | URL backend для frontend-контейнера (`BACKEND_URL` в runtime) | `http://backend:8000`                                                     |
+| `NEXT_PUBLIC_API_URL`               | Адрес backend, используемый браузером                         | `http://localhost:8000`                                                   |
+| `NEXT_PUBLIC_GRAFANA_DASHBOARD_URL` | URL dashboard для iframe (build ARG)                          | `http://localhost:3000/d/model-comparison/model-comparison?orgId=1&kiosk` |
 
 ### Backend
 
-| Переменная         | Назначение                   | Значение по умолчанию |
-|--------------------|------------------------------|-----------------------|
-| `DATA_DIR`         | Каталог runtime-данных       | `data`                |
-| `COMPARISON_PATH`  | Путь к source-of-truth       | `comparison.json`     |
-| `FRONTEND_ORIGINS` | Разрешённые frontend origins | localhost:3100        |
+| Переменная         | Назначение                         | Значение по умолчанию |
+|--------------------|------------------------------------|-----------------------|
+| `DATA_DIR`         | Каталог runtime-данных             | `data`                |
+| `MODEL_PATH`       | Путь к buffer-файлу модели         | `data/model.json`     |
+| `EXPERIMENTS_DIR`  | Директория snapshots экспериментов | `data/experiments`    |
+| `SCHEMAS_DIR`      | Директория JSON-схем               | `schemas`             |
+| `COMPARISON_PATH`  | Путь к source-of-truth             | `comparison.json`     |
+| `FRONTEND_ORIGINS` | Разрешённые frontend origins       | localhost:3100        |
 
 ### InfluxDB
 
