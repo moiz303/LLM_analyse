@@ -3,7 +3,6 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Демонстрация сжатия',
-  description: 'Интерактивный анализ и лаборатория прогнозов сжатия моделей.',
   generator: 'v0.app',
   icons: {
     icon: [

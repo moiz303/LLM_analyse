@@ -172,7 +172,7 @@ Python на хост-системе для обычного запуска не 
 1. Стандартные первые шаги:
 
    ```bash
-   git clone <репозиторий>
+   git clone https://github.com/moiz303/LLM_analyse.git
    cp .env.example .env
    ```
 

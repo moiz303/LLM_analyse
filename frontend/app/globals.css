@@ -4,10 +4,10 @@
 
 /* Палитра */
 :root {
---base: #0d131b;
---accent: #b8ef68;
+--base: #091015;
+--accent: #60bb3a;
 --info: #7dd3fc;
---danger: #fb7185;
+--danger: #fda010;
 
 /* Поверхности */
 --background: color-mix(in srgb, var(--base) 95%, white);
@@ -20,8 +20,8 @@
 /* Текста */
 --foreground: #e6edf3;
 --text-strong: color-mix(in srgb, var(--foreground) 92%, var(--base));
---text-primary: color-mix(in srgb, var(--foreground) 74%, var(--base));
---muted: color-mix(in srgb, var(--foreground) 52%, var(--base));
+--text-primary: color-mix(in srgb, var(--foreground) 88%, var(--base));
+--muted: color-mix(in srgb, var(--foreground) 74%, var(--base));
 
 /* Акцентные wash-слои */
 --accent-wash: color-mix(in srgb, var(--accent) 8%, transparent);
@@ -48,7 +48,7 @@ body {margin: 0; background: var(--background); color: var(--foreground); font-f
 
 button,
 input {font: inherit}
-button {cursor: pointer}
+reset-button{cursor: pointer; border: 6px}
 
 /* Layout */
 .app-shell {max-width: 1560px; margin: 0 auto; padding: 28px 38px 20px}
@@ -93,7 +93,7 @@ h3 span {color: var(--muted);font-weight: 400}
 
 .reset-button {display: flex;align-items: center;gap: 8px;background: transparent;color: var(--text-strong);padding: 9px 13px;border-radius: var(--radius);font-size: var(--font-14);transition: border-color .2s, color .2s}
 .reset-button:hover {border-color: var(--info);color: var(--info)}
-.reset-button:enabled {opacity: .5;cursor: wait}
+.reset-button:enabled {opacity: .5;cursor: pointer; border: 2px}
 .reset-button svg {width: 14px}
 
 .error-banner {display: flex;align-items: center;gap: 10px;margin: 16px 0 0;padding: 10px 13px;color: color-mix(in srgb, var(--danger) 70%, var(--foreground));background: var(--danger-wash);border-radius: var(--radius);font-size: var(--font-14)}
@@ -120,7 +120,7 @@ h3 span {color: var(--muted);font-weight: 400}
 .parameter:hover {border-color: var(--line);background: var(--hover-bg)}
 .parameter.selected {border-color: color-mix(in srgb, var(--info) 45%, var(--base));background: var(--background)}
 .parameter-top {justify-content: space-between;margin-bottom: 13px}
-.parameter-name {font-size: var(--font-14);font-weight: 600}
+.parameter-name {font-size: var(--font-18);font-weight: 600}
 .critical {margin-left: 7px;color: var(--danger);font-size: var(--font-14);letter-spacing: .08em;text-transform: uppercase}
 .parameter-top strong {color: var(--info);font-size: var(--font-16);font-variant-numeric: tabular-nums}
 
@@ -167,7 +167,7 @@ input[type=range]::-webkit-slider-thumb {appearance: none;width: 14px;height: 14
 .metric-card.bad {border-left-color: var(--danger)}
 .metric-card-head,
 .metric-comparison {display: flex;justify-content: space-between;align-items: center}
-.metric-card-head {color: var(--text-primary);font-size: var(--font-14)}
+.metric-card-head {color: var(--text-primary);font-size: var(--font-14);font-weight: 400}
 
 .metric-kind {color: var(--muted);font-size: var(--font-14);text-transform: uppercase}
 .metric-value {margin: 4px 0 10px;color: var(--text-strong);font-size: var(--font-26);font-weight: 500;letter-spacing: -.04em;font-variant-numeric: tabular-nums}
@@ -187,7 +187,7 @@ input[type=range]::-webkit-slider-thumb {appearance: none;width: 14px;height: 14
 .compare-card {margin-top: 12px;padding: 20px}
 
 .card-heading {justify-content: space-between;gap: 20px}
-.card-heading h3 {font-size: var(--font-18);font-weight: 600}
+.card-heading h2 {font-size: var(--font-18);font-weight: 600}
 .card-heading > svg {color: var(--muted);width: 18px}
 
 .legend {display: flex;align-items: center;gap: 7px;color: var(--muted);font-size: var(--font-14)}
