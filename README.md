@@ -2,12 +2,12 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-green)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688)
-![Next.js](https://img.shields.io/badge/Next.js-16-black)
-![React](https://img.shields.io/badge/React-19-61dafb)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8)
+![Next.js](https://img.shields.io/badge/Next.js-16-red)
+![React](https://img.shields.io/badge/React-19-red)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-red)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-orange)
 ![Grafana](https://img.shields.io/badge/Grafana-11-orange)
-![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-red)
+![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-blue)
 ![Docker](https://img.shields.io/badge/Docker-blue)
 
 ---
