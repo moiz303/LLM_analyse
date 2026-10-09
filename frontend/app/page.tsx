@@ -7,15 +7,13 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
-  Check,
   ChevronRight,
-  Clock3,
   Gauge,
   History,
-  Loader2,
+  Moon,
+  Sun,
   RotateCcw,
   SlidersHorizontal,
-  Sparkles,
   Target,
   Zap,
 } from 'lucide-react'
@@ -42,7 +40,43 @@ function formatValue(value: NumOrNull | undefined, name = '') {
   if (n === null) return '—'
   return name.includes('accuracy') || name.includes('f1') ? Number(n.toFixed(4)).toLocaleString('ru-RU') : Number(n.toFixed(2)).toLocaleString('ru-RU')
 }
-function prettyName(name: string) { return name.replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }
+function formatParameterValue(value: number) {
+  return value.toLocaleString('ru-RU', { maximumFractionDigits: 8 })
+}
+function parameterStep(parameter: Parameter) {
+  const span = parameter.ui_range.max - parameter.ui_range.min
+  if (Number.isInteger(parameter.baseline) && span >= 1) return 1
+  const decimalPlaces = parameter.baseline.toFixed(8).replace(/0+$/, '').split('.')[1]?.length ?? 0
+  const rangePrecision = span > 0 ? -Math.floor(Math.log10(span / 100)) : 2
+  return 10 ** -Math.max(2, decimalPlaces, rangePrecision)
+}
+const labels: Record<string, string> = {
+  imatrix_chunks: 'Блоки матрицы важности (Imatrix chunks)',
+  imatrix_context: 'Контекст матрицы важности (Imatrix context)',
+  minimum_nll_gain: 'Минимальное улучшение NLL (Minimum NLL gain)',
+  search_rounds: 'Раунды поиска (Search rounds)',
+  seed: 'Начальное зерно (Seed)',
+  strict_max_bytes: 'Предельный размер, байт (Strict max bytes)',
+  target_bytes: 'Целевой размер, байт (Target bytes)',
+  model_size_bytes: 'Размер модели, байт',
+  model_size_decimal_gb: 'Размер модели, ГБ',
+  selection_perplexity: 'Перплексия (Perplexity)',
+  selection_nll: 'Логарифмическая потеря (NLL)',
+  accuracy_top1: 'Точность первого ответа (Top-1 accuracy)',
+  latency_ms: 'Задержка, мс (Latency)',
+  quality: 'Качество', memory: 'Память', latency: 'Задержка', generic: 'Метрика',
+  high: 'Высокая', medium: 'Средняя', low: 'Низкая', pending: 'Ожидание', unknown: 'Нет данных',
+  baseline: 'Базовая конфигурация',
+}
+function prettyName(name: string) { return labels[name] ?? name }
+function experimentName(id: string) {
+  if (id === 'baseline') return prettyName(id)
+  const adaptiveSize = id.match(/_adaptive_(\d+)_/i)?.[1]
+  if (adaptiveSize) return `Адаптивное сжатие · ${(Number(adaptiveSize) / 100).toLocaleString('ru-RU')} ГБ`
+  if (id.includes('_q4_k_m_')) return 'Квантование (Q4_K_M)'
+  const size = id.match(/_(\d+(?:\.\d+)?)gb_/i)?.[1]
+  return size ? `Эксперимент · ${size.replace('.', ',')} ГБ` : `Эксперимент · ${id}`
+}
 function deltaClass(delta: number | null | undefined, direction?: string) {
   if (delta === undefined || delta === null || delta === 0) return 'baseline-text'
   const increaseIsBetter = direction !== 'lower_is_better'
@@ -66,6 +100,15 @@ function barWidth(value: number | null | undefined, total: number | null | undef
 }
 
 export default function Page() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  useEffect(() => { setTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light') }, [])
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light'
+    setTheme(next)
+    document.documentElement.dataset.theme = next
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#191c19' : '#e7e8e6')
+    try { localStorage.setItem('llm-theme', next) } catch { /* Тема работает и без хранилища. */ }
+  }
   const [model, setModel] = useState<Model | null>(null)
   const [config, setConfig] = useState<Record<string, number>>({})
   const [prediction, setPrediction] = useState<Prediction | null>(null)
@@ -85,7 +128,6 @@ export default function Page() {
   })
   const sanitizeExperiments = (raw: unknown): Experiment[] => Array.isArray(raw) ? raw.map((e) => ({ ...e, configuration: Object.fromEntries(Object.entries(e?.configuration ?? {}).map(([k, v]: [string, unknown]) => [k, typeof v === 'number' && Number.isFinite(v) ? v : 0])), metrics: Object.fromEntries(Object.entries(e?.metrics ?? {}).map(([k, v]: [string, unknown]) => [k, num(v as number)])) })) : []
 
-  const [health, setHealth] = useState<'loading' | 'online' | 'offline'>('loading')
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
   const [error, setError] = useState('')
@@ -107,32 +149,6 @@ export default function Page() {
     return list.find((experiment) => experiment && matches(experiment.configuration)) ?? null
   }, [model, experiments])
 
-  const parameterBounds = useMemo(() => {
-    const bounds: Record<string, { min: number; max: number }> = {}
-    if (!model) return bounds
-    const points: Record<string, number[]> = {}
-    const addPoint = (configuration: Record<string, number>) => {
-      for (const [name, raw] of Object.entries(configuration)) {
-        const value = num(raw)
-        if (value === null) continue
-        ;(points[name] ??= []).push(value)
-      }
-    }
-    addPoint(model.baseline?.configuration ?? {})
-    for (const experiment of experiments) addPoint(experiment.configuration)
-    for (const parameter of model.parameters) {
-      const observed = points[parameter.name]
-      const values = [...(observed ?? []), num(parameter.baseline)].filter((v): v is number => v !== null)
-      if (!values.length) continue
-      const spread = Math.max(...values) - Math.min(...values)
-      const pad = Math.max(spread * 0.05, 0.05)
-      const min = Math.floor((Math.min(...values) - pad) * 100) / 100
-      const rawMax = Math.ceil((Math.max(...values) + pad) * 100) / 100
-      bounds[parameter.name] = { min, max: min + Math.round((rawMax - min) * 100) / 100 }
-    }
-    return bounds
-  }, [model, experiments])
-
   const activeExperiment = useMemo(() => findKnownExperiment(config), [config, findKnownExperiment])
   const requestId = useRef(0)
   const load = useCallback(async () => {
@@ -142,9 +158,9 @@ export default function Page() {
       ])
       if (!healthResponse.ok || !modelResponse.ok) throw new Error('Сервер недоступен')
       const nextModel = sanitizeModel(await modelResponse.json() as Model)
-      setModel(nextModel); setConfig(nextModel.current_configuration); setHealth('online')
+      setModel(nextModel); setConfig(nextModel.current_configuration)
       if (experimentsResponse.ok) setExperiments(sanitizeExperiments(await experimentsResponse.json()))
-    } catch (err) { setHealth('offline'); setError(err instanceof Error ? err.message : 'Сейчас сервер отключен') }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Сейчас сервер отключен') }
     finally { setLoading(false) }
   }, [])
 
@@ -176,11 +192,6 @@ export default function Page() {
   }
 
   const sensitivity = useMemo(() => model?.parameters.map((parameter) => ({ ...parameter, score: Math.max(...Object.values(parameter.sensitivity || {}).map((value) => { if (typeof value === 'number') return Math.abs(num(value) ?? 0); if (!value) return 0; return Math.max(Math.abs(num(value.lower) ?? 0), Math.abs(num(value.upper) ?? 0), Math.abs(num(value.power_lower) ?? 0), Math.abs(num(value.power_upper) ?? 0)) }), 0) })).sort((a, b) => b.score - a.score) || [], [model])
-  const sliderRange = (parameter: Parameter) => {
-    const dynamic = parameterBounds[parameter.name]
-    if (!dynamic) return parameter.ui_range
-    return { min: Math.min(parameter.ui_range.min, dynamic.min), max: Math.max(parameter.ui_range.max, dynamic.max) }
-  }
 
   const reset = async () => {
     requestId.current += 1
@@ -270,38 +281,33 @@ export default function Page() {
     return { level, nearest_experiment_id: best.id, distance: best.distance, exact: false }
   }, [model, experiments, config, activeExperiment])
 
-  if (loading) return <main className="loading-screen"><div className="loader-mark"><Activity /></div><p>Loading...</p></main>
+  if (loading) return <main className="loading-screen"><div className="loader-mark"><Activity /></div><p>Загрузка…</p></main>
 
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div className="brand"><div className="brand-mark"><Sparkles /></div><div><h1>Workbench</h1></div></div>
-        <div className="top-actions"><div className={`system-status ${health}`}><span/> System {health === 'online' ? 'online' : health === 'loading' ? 'loading...' : 'offline'}</div><div className="calc-state">{calculating ? <><Loader2 className="spin"/>Calculating...</> : health === 'online' && prediction ? <><Check /> Synchronized to backend</> : <><AlertTriangle /> Waiting for backend</>}</div></div>
-      </header>
-      {error && <div className="error-banner"><AlertTriangle /> <span>{error}</span><button onClick={() => setError('')}>Hide</button></div>}
+      {error && <div className="error-banner"><AlertTriangle /> <span>{error}</span><button onClick={() => setError('')}>Скрыть</button></div>}
       <div className="content-grid">
-        <aside className="sidebar panel">
-          <div className="section-heading"><div><h2>Model parameters</h2></div><SlidersHorizontal /></div>
+        <aside className="sidebar panel" id="parameters">
+          <div className="section-heading"><div><h2>Параметры модели</h2></div><SlidersHorizontal /></div>
           <div className="parameter-list">
-            {model?.parameters.map((parameter) => {const range = sliderRange(parameter); const value = sliderValue(config[parameter.name], parameter.baseline); const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => selectParameter(parameter.name)} ref={(el) => { parameterRefs.current[parameter.name] = el }}>
-              <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">critical</span>}</div><strong>{Number(value.toFixed(2)).toLocaleString('ru-RU')}</strong></div>
-              <input aria-label={parameter.name} type="range" min={range.min} max={range.max} step={parameter.baseline.toFixed(2) % 1 === 0 ? "1.00" : "0.01"} value={Math.min(Math.max(value, range.min), range.max)} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
-              <div className="range-labels"><span>min {range.min}</span><span>max {range.max}</span></div>
-              <div className="parameter-details"><span>Baseline <strong>{Number(parameter.baseline.toFixed(2)).toLocaleString('ru-RU')}</strong></span><span>Current <strong>{Number(value.toFixed(2)).toLocaleString('ru-RU')}</strong></span><span className={deltaClass(delta)}>Delta <strong>{delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${Number(delta.toFixed(2)).toLocaleString('ru-RU')}`}</strong></span></div>
+            {model?.parameters.map((parameter) => {const range = parameter.ui_range; const value = sliderValue(config[parameter.name], parameter.baseline); const delta = value - parameter.baseline; return <div key={parameter.name} className={`parameter ${selectedParam === parameter.name ? 'selected' : ''}`} onClick={() => selectParameter(parameter.name)} ref={(el) => { parameterRefs.current[parameter.name] = el }}>
+              <div className="parameter-top"><div><span className="parameter-name">{prettyName(parameter.name)}</span>{parameter.critical && <span className="critical">Критический</span>}</div><strong>{formatParameterValue(value)}</strong></div>
+              <input aria-label={prettyName(parameter.name)} type="range" min={range.min} max={range.max} step={parameterStep(parameter)} value={Math.min(Math.max(value, range.min), range.max)} onChange={(event) => setConfig((current) => ({ ...current, [parameter.name]: Number(event.target.value) }))} />
+              <div className="range-labels"><span>Мин. {formatParameterValue(range.min)}</span><span>Макс. {formatParameterValue(range.max)}</span></div>
+              <div className="parameter-details"><span>Базовое <strong>{formatParameterValue(parameter.baseline)}</strong></span><span>Текущее <strong>{formatParameterValue(value)}</strong></span><span className={deltaClass(delta)}>Изменение <strong>{delta === 0 ? '0' : `${delta > 0 ? '+' : ''}${formatParameterValue(delta)}`}</strong></span></div>
             </div> })}
           </div>
-          <div className="sensitivity-box"><div className="box-title"><Target />Sensitivity Rate</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => selectParameter(parameter.name)}><span className="rank">0{index + 1}</span><span>{parameter.name}</span><span className="sensitivity-score">{parameter.score.toFixed(3)} <ChevronRight /></span></button>)}</div>
+          <div className="sensitivity-box"><div className="box-title"><Target />Чувствительность (Sensitivity)</div>{sensitivity.map((parameter, index) => <button className="sensitivity-row" key={parameter.name} onClick={() => selectParameter(parameter.name)}><span className="rank">0{index + 1}</span><span>{prettyName(parameter.name)}</span><span className="sensitivity-score">{formatParameterValue(parameter.score)} <ChevronRight /></span></button>)}</div>
         </aside>
         <section className="main-column">
-          <div className="hero-row"><div><p className="eyebrow">{model?.model_id || 'Model'}</p><h2>Model quality assessment</h2></div><button className="reset-button" onClick={reset} disabled={calculating}><RotateCcw />Return to baseline</button></div>
-          <div className="metric-grid">{activeMetrics.filter((metric) => {if (metric.kind === 'quality' || metric.kind === 'generic') {return true} if (metric.kind === 'memory' || metric.kind === 'latency') {const value = num(prediction?.prediction[metric.name] ?? (activeExperiment? activeExperiment.metrics[metric.name]: undefined)); const minValue = Math.min(...activeMetrics.filter((m) => m.kind === metric.kind).map((m) => num(prediction?.prediction[m.name] ?? (activeExperiment ? activeExperiment.metrics[m.name]: undefined))).filter((v) => v !== null)); return value !== null && value === minValue;} return true;}).map((metric) => {const predicted = num(prediction?.prediction[metric.name] ?? (activeExperiment ? activeExperiment.metrics[metric.name] : undefined));const base = num(prediction?.baseline[metric.name] ?? model?.baseline.metrics[metric.name] ?? metric.compressed);const delta = predicted !== null && base !== null ? predicted - base: undefined;const tone = displayTone(metric,predicted,base,Boolean(activeExperiment));return (<article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head">{prettyName(metric.name)}<span className="metric-kind">{metric.kind || 'metric'}</span></div><div className="metric-label">{activeExperiment ? `${activeExperiment.experiment_id}`: 'Prediction'}</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Baseline {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—': `${delta > 0 ? '+' : ''}${formatValue(delta,metric.name)}`}</span></div><div className="metric-bar"><span style={{width: `${barWidth(predicted, base)}%`,}}/></div></article>)})}</div>
-          <div className="compare-card panel"><div className="card-heading"><div><h2>Original vs compared (baseline)</h2></div><div className="legend">{activeExperiment ? <><span className="legend-dot actual" />{activeExperiment.experiment_id}</> : <><span className="legend-dot predicted" />Prediction</>}</div></div><div className="comparison-table">{comparisonRows.filter((row) => {if (row.kind === 'quality' || row.kind === 'generic') {return true} if (row.kind === 'memory' || row.kind === 'latency') {const value = num(row.compressed ?? row.full); const minValue = Math.min(...comparisonRows.filter((r) => r.kind === row.kind).map((r) => num(r.compressed ?? r.full)).filter((v) => v !== null)); return value !== null && value === minValue;} return true;}).map((row) => <div className="comparison-row" key={row.name}><span className="comparison-name">{prettyName(row.name)}</span><div className="comparison-line"><span className={`line-fill${row.isPrediction ? ' predicted' : ''}`} style={{ width: `${barWidth(Math.abs(row.compressed ?? 0), Math.abs(num(row.full) ?? 0), 12)}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(row.compressed, row.name)}</span><span className="full-value">{formatValue(row.full, row.name)}</span></div>)}</div></div>          <div className="lower-grid"><section className="panel history-card"><div className="card-heading"><div><h2>Experiments history</h2></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${highlightedExperimentId === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong>{experiment.experiment_id}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString() : 'Timestamp is unavailable'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}</div><ChevronRight /></button>) : <div className="empty-state"><History />No saved experiments</div>}{activeExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity />{activeExperiment.experiment_id} metrics</div><div className="actual-reference-grid">{Object.entries(activeExperiment.metrics).map(([name, value]) => {return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><h2>Prediction accuracy</h2></div><Gauge /></div><div className={`support-level ${(supportDisplay?.level || prediction?.support?.level || 'unknown').toLowerCase()}`}>{supportDisplay?.exact ? 'high' : supportDisplay?.level || prediction?.support?.level || 'pending'}</div>{(supportDisplay?.exact ? false : (supportDisplay?.level ?? prediction?.support?.level)?.toLowerCase() === 'low') && <div className="support-warning"><AlertTriangle/>Low accuracy: estimate outside the range of reliable experimental coverage</div>}<div className="support-meta"><span>Closer experiment</span><strong>{supportDisplay?.nearest_experiment_id || prediction?.support?.nearest_experiment_id || '—'}</strong></div><div className="support-meta"><span>Difference</span><strong>{supportDisplay ? supportDisplay.distance.toFixed(3) : prediction?.support?.distance?.toFixed(3) || '—'}</strong></div></section></div>
+          <div className="hero-row" id="assessment"><div><p className="eyebrow">{model?.model_id || 'Модель'}</p><h2>Оценка качества модели</h2></div><div className="hero-actions"><button className="theme-toggle" onClick={toggleTheme} aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'} aria-pressed={theme === 'dark'} title={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}>{theme === 'light' ? <Moon /> : <Sun />}<span>{theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}</span></button><button className="reset-button" onClick={reset} disabled={calculating}><RotateCcw />Вернуть базовые значения</button></div></div>
+          <div className="metric-grid">{activeMetrics.filter((metric) => {if (metric.kind === 'quality' || metric.kind === 'generic') {return true} if (metric.kind === 'memory' || metric.kind === 'latency') {const value = num(prediction?.prediction[metric.name] ?? (activeExperiment? activeExperiment.metrics[metric.name]: undefined)); const minValue = Math.min(...activeMetrics.filter((m) => m.kind === metric.kind).map((m) => num(prediction?.prediction[m.name] ?? (activeExperiment ? activeExperiment.metrics[m.name]: undefined))).filter((v) => v !== null)); return value !== null && value === minValue;} return true;}).map((metric) => {const predicted = num(prediction?.prediction[metric.name] ?? (activeExperiment ? activeExperiment.metrics[metric.name] : undefined));const base = num(prediction?.baseline[metric.name] ?? model?.baseline.metrics[metric.name] ?? metric.compressed);const delta = predicted !== null && base !== null ? predicted - base: undefined;const tone = displayTone(metric,predicted,base,Boolean(activeExperiment));return (<article className={`metric-card ${tone}`} key={metric.name}><div className="metric-card-head">{prettyName(metric.name)}<span className="metric-kind">{prettyName(metric.kind || 'generic')}</span></div><div className="metric-label">{activeExperiment ? experimentName(activeExperiment.experiment_id): 'Прогноз'}</div><div className="metric-value">{formatValue(predicted, metric.name)}</div><div className="metric-comparison"><span>Базовое {formatValue(base, metric.name)}</span><span className={deltaClass(delta, metric.direction)}>{delta === undefined ? '—': `${delta > 0 ? '+' : ''}${formatValue(delta,metric.name)}`}</span></div><div className="metric-bar"><span style={{width: `${barWidth(predicted, base)}%`,}}/></div></article>)})}</div>
+          <div className="compare-card panel"><div className="card-heading"><div><h2>Исходная и сравниваемая модели</h2></div><div className="legend">{activeExperiment ? <><span className="legend-dot actual" />{experimentName(activeExperiment.experiment_id)}</> : <><span className="legend-dot predicted" />Прогноз</>}</div></div><div className="comparison-table">{comparisonRows.filter((row) => {if (row.kind === 'quality' || row.kind === 'generic') {return true} if (row.kind === 'memory' || row.kind === 'latency') {const value = num(row.compressed ?? row.full); const minValue = Math.min(...comparisonRows.filter((r) => r.kind === row.kind).map((r) => num(r.compressed ?? r.full)).filter((v) => v !== null)); return value !== null && value === minValue;} return true;}).map((row) => <div className="comparison-row" key={row.name}><span className="comparison-name">{prettyName(row.name)}</span><div className="comparison-line"><span className={`line-fill${row.isPrediction ? ' predicted' : ''}`} style={{ width: `${barWidth(Math.abs(row.compressed ?? 0), Math.abs(num(row.full) ?? 0), 12)}%` }} /><span className="line-marker" /></div><span className="actual-value">{formatValue(row.compressed, row.name)}</span><span className="full-value">{formatValue(row.full, row.name)}</span></div>)}</div></div>          <div className="lower-grid"><section className="panel history-card" id="experiments"><div className="card-heading"><div><h2>История экспериментов</h2></div><History /></div>{experiments.length ? experiments.map((experiment) => <button className={`experiment-row ${highlightedExperimentId === experiment.experiment_id ? 'active' : ''}`} key={experiment.experiment_id} onClick={() => applyExperiment(experiment)}><div className="experiment-icon"><Zap /></div><div className="experiment-copy"><strong title={experiment.experiment_id}>{experimentName(experiment.experiment_id)}</strong><span>{experiment.timestamp ? new Date(experiment.timestamp).toLocaleString('ru-RU') : 'Время не указано'}</span></div><div className="experiment-metric">{formatValue(Object.values(experiment.metrics)[0])}</div><ChevronRight /></button>) : <div className="empty-state"><History />Нет сохранённых экспериментов</div>}{activeExperiment && <div className="actual-reference"><div className="actual-reference-title"><Activity />Метрики: {experimentName(activeExperiment.experiment_id)}</div><div className="actual-reference-grid">{Object.entries(activeExperiment.metrics).map(([name, value]) => {return <div className="actual-reference-row" key={name}><span>{prettyName(name)}</span><strong className="actual-value">{formatValue(value, name)}</strong></div> })}</div></div>}</section><section className="panel support-card"><div className="card-heading"><div><h2>Надёжность прогноза</h2></div><Gauge /></div><div className={`support-level ${(supportDisplay?.level || prediction?.support?.level || 'unknown').toLowerCase()}`}>{prettyName(supportDisplay?.exact ? 'high' : supportDisplay?.level || prediction?.support?.level || 'pending')}</div>{(supportDisplay?.exact ? false : (supportDisplay?.level ?? prediction?.support?.level)?.toLowerCase() === 'low') && <div className="support-warning"><AlertTriangle/>Низкая надёжность: конфигурация за пределами области, подтверждённой экспериментами</div>}<div className="support-meta"><span>Ближайший эксперимент</span><strong>{experimentName(supportDisplay?.nearest_experiment_id || prediction?.support?.nearest_experiment_id || 'baseline')}</strong></div><div className="support-meta"><span>Расстояние</span><strong>{supportDisplay ? supportDisplay.distance.toLocaleString('ru-RU', { maximumFractionDigits: 3 }) : prediction?.support?.distance?.toLocaleString('ru-RU', { maximumFractionDigits: 3 }) || '—'}</strong></div></section></div>
           {/* Секция Grafana: iframe вынесен в отдельный компонент (см.
               components/GrafanaDashboard), URL — только из environment. */}
-          <section className="grafana-section panel"><div className="card-heading"><div><h2>Full and compared: summary</h2></div><div className="grafana-label"><Activity />Grafana live</div></div><GrafanaDashboard url={GRAFANA_URL} paramName={selectedParam || model?.parameters[0]?.name} paramValue={selectedParam ? config[selectedParam] ?? null : model?.parameters[0] ? config[model.parameters[0].name] ?? null : null} metric={activeMetrics[0]?.name} /></section>
+          <section className="grafana-section panel" id="summary"><div className="card-heading"><div><h2>Сводка сравнения моделей</h2></div><div className="grafana-label"><Activity />Grafana · онлайн</div></div><GrafanaDashboard theme={theme} url={GRAFANA_URL} paramName={selectedParam || model?.parameters[0]?.name} paramValue={selectedParam ? config[selectedParam] ?? null : model?.parameters[0] ? config[model.parameters[0].name] ?? null : null} metric={activeMetrics[0]?.name} /></section>
         </section>
       </div>
-      <footer><span><Clock3 /> backend predictions are saving automatically</span><span>API | {API_URL.replace(/^https?:\/\//, '')}</span></footer>
     </main>
   )
 }
