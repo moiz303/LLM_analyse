@@ -84,125 +84,177 @@
         "type": "influxdb",
         "uid": "influxdb-model-comparison"
       },
-      "description": "Полная модель (full) и сжатая compressed — исторические замеры, сделанные в Kaggle; реактивная линия (predicted) пересчитывается при выборе параметра/значения в переменных сверху или при движении ползунков на фронте (iframe var-param_*).",
+      "description": "Bar chart: подпись под столбиком = округлённое значение прогноза (до 3 знаков без незначащих нулей) + #N — порядковый номер по времени добавления в InfluxDB (гарантирует уникальность категории и строгий порядок: новые справа). Дат на оси X нет. Высота = значение метрики, цвет = точность (high/medium/low). Уровни full/compressed — «линии» из прозрачной базы + тонкой цветной крышки (stacked). Auto-refresh 5s.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+          "custom": {},
+          "decimals": 3,
+          "unit": "short",
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "xcat"
+              },
+              "properties": [
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "viz": true,
+                    "legend": true,
+                    "tooltip": true
+                  }
+                }
+              ]
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "high"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "точность: high"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#73bf69"
+                  }
+                }
+              ]
             },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "medium"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "точность: medium"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#ff9830"
+                  }
+                }
+              ]
             },
-            "thresholdsStyle": {
-              "mode": "off"
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "low"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "точность: low"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#e02f44"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "lvl_full"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "уровень: full"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#5794f2"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "lvl_comp"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "уровень: compressed"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#73bf69"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "lvl_full_base"
+              },
+              "properties": [
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "viz": false,
+                    "legend": true,
+                    "tooltip": true
+                  }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "transparent"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "lvl_comp_base"
+              },
+              "properties": [
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "viz": false,
+                    "legend": true,
+                    "tooltip": true
+                  }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "transparent"
+                  }
+                }
+              ]
             }
-          },
-          "decimals": 5,
-          "displayName": "${__field.labels.model_type}",
-          "unit": "none"
+          ],
+          "min": 0
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "full"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "compressed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "predicted"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    6,
-                    4
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 7
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 12,
@@ -212,19 +264,27 @@
       },
       "id": 3,
       "options": {
+        "showValue": "never",
+        "orient": "vertical",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "minWidth": 0,
+        "stacking": "normal",
+        "groupWidth": 85,
+        "barRadius": 0,
         "legend": {
           "calcs": [
-            "lastNotNull",
-            "min",
-            "max"
+            "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "desc"
-        }
+          "sort": "none"
+        },
+        "sortByField": null
       },
       "targets": [
         {
@@ -233,24 +293,15 @@
             "type": "influxdb",
             "uid": "influxdb-model-comparison"
           },
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\")\n  |> filter(fn: (r) => r.model_type == \"full\" or r.model_type == \"compressed\")\n  |> filter(fn: (r) => r._field == \"${metric_choice}\")\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"model_type\"])\n  |> group(columns: [\"model_type\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
-          "hide": false
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "influxdb-model-comparison"
-          },
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"metric_results\")\n  |> filter(fn: (r) => r.model_type == \"predicted\")\n  |> filter(fn: (r) => r._field == \"${metric_choice}\")\n  // $param_value = All -> вся история прогнозов по выбранному параметру;\n  // конкретное значение (в т.ч. проброшенное фронтом через var-param_value)\n  // оставляет только точки с этим значением тега cfg_<param>.\n  |> filter(fn: (r) => r[\"cfg_${param_name}\"] =~ /^${param_value}$/)\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"model_type\", \"support_level\"])\n  |> group(columns: [\"model_type\"])\n  |> yield(name: \"mean\")",
+          "query": "import \"math\"\n\npredicted =\n from(bucket: \"model_comparison\")\n |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n |> filter(fn: (r) =>\n r._measurement == \"metric_results\" and\n r.model_type == \"predicted\" and\n r._field == \"${metric_choice}\"\n )\n |> keep(columns: [\"_time\", \"_value\", \"support_level\"])\n |> sort(columns: [\"_time\"])\n |> map(fn: (r) => ({r with one: 1}))\n |> cumulativeSum(columns: [\"one\"])\n\npredicted\n |> map(fn: (r) => ({\n xcat: string(v: r._value) + \" #\" + string(v: r.one),\n high: if r.support_level == \"high\" then r._value else 0.0,\n medium: if r.support_level == \"medium\" then r._value else 0.0,\n low: if r.support_level == \"low\" then r._value else 0.0\n }))\n |> group()\n |> sort(columns: [\"xcat\"])",
           "hide": false
         }
       ],
-      "title": "${metric_choice}: full vs compressed + реактивный прогноз ($param_name = $param_value)",
-      "type": "timeseries"
+      "title": "${metric_choice}: прогнозы (bar chart) + уровни ($param_name)",
+      "type": "barchart"
     }
   ],
-  "refresh": "",
+  "refresh": "5s",
   "schemaVersion": 39,
   "style": "dark",
   "tags": [
@@ -294,7 +345,7 @@
           "uid": "influxdb-model-comparison"
         },
         "definition": "from(bucket: \"model_comparison\")\n  |> range(start: -365d)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type == \"predicted\")\n  |> keys()\n  |> filter(fn: (r) => r.key =~ /^cfg_/)\n  |> map(fn: (r) => ({ r with _value: strings.trimPrefix(v: r.key, prefix: \"cfg_\") }))\n  |> distinct(column: \"_value\")",
-        "hide": 0,
+        "hide": 2,
         "includeAll": false,
         "label": "Параметр",
         "multi": false,
@@ -303,41 +354,9 @@
         "query": "from(bucket: \"model_comparison\")\n  |> range(start: -365d)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type == \"predicted\")\n  |> keys()\n  |> filter(fn: (r) => r.key =~ /^cfg_/)\n  |> map(fn: (r) => ({ r with _value: strings.trimPrefix(v: r.key, prefix: \"cfg_\") }))\n  |> distinct(column: \"_value\")",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
+        "skipUrlSync": true,
         "sort": 1,
         "type": "query"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "influxdb-model-comparison"
-        },
-        "definition": "",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Значение",
-        "multi": false,
-        "name": "param_value",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "from(bucket: \"model_comparison\")\n  |> range(start: -365d)\n  |> filter(fn: (r) => r._measurement == \"metric_results\" and r.model_type == \"predicted\")\n  |> filter(fn: (r) => exists r[\"cfg_${param_name}\"])\n  |> keep(columns: [\"cfg_${param_name}\"])\n  |> distinct(column: \"cfg_${param_name}\")",
-          "refId": "InfluxVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "sort": 3,
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "type": "query",
-        "allValue": ".*"
       }
     ]
   },
@@ -345,9 +364,20 @@
     "from": "now-30d",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
   "timezone": "browser",
   "title": "Model Comparison",
   "uid": "model-comparison",
-  "version": 2
+  "version": 3
 }

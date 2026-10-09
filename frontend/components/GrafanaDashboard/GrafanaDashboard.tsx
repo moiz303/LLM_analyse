@@ -26,7 +26,6 @@ function splitBase(url: string) {
     const parsed = new URL(url, window.location.origin)
     const search = new URLSearchParams(parsed.search)
     search.delete('var-param_name')
-    search.delete('var-param_value')
     search.delete('var-metric_choice')
     parsed.search = search.toString()
     return parsed.toString().replace(/[?&]$/, '')
@@ -35,7 +34,7 @@ function splitBase(url: string) {
   }
 }
 
-export default function GrafanaDashboard({ url, paramName, paramValue, metric }: Props) {
+export default function GrafanaDashboard({ url, paramName, metric }: Props) {
   const raw = url || process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_URL || process.env.VITE_GRAFANA_DASHBOARD_URL || ''
 
   // Если Grafana недоступна/URL не задан — показываем заглушку: отказ Grafana не должен ломать prediction UI.
@@ -52,9 +51,6 @@ export default function GrafanaDashboard({ url, paramName, paramValue, metric }:
   const base = splitBase(raw)
   const params = new URLSearchParams()
   if (paramName) params.set('var-param_name', paramName)
-  if (paramValue !== undefined && paramValue !== null && Number.isFinite(paramValue)) {
-    params.set('var-param_value', String(Math.round(paramValue * 100) / 100))
-  }
   if (metric) params.set('var-metric_choice', metric)
 
   const extra = params.toString()
