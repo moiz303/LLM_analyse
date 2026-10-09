@@ -12,9 +12,15 @@
 
 ---
 
-<p align="center">
-  <img src="src/img/preview.png" width="1024" alt="Предпросмотр продукта">
-</p>
+<details>
+  <summary><b>Нажмите, чтобы посмотреть скриншоты проекта</b></summary>
+  
+  <p align="center">
+    <img src="src/img/preview.png" width="1024" alt="Светлая тема">
+    <img src="src/img/preview-dark.png" width="1024" alt="Тёмная тема">
+  </p>
+
+</details>
 
 
 ---
